@@ -55,15 +55,15 @@ def load():
 def strip_cols(df):
     # Adjust columns
     df.columns = (
-        df.columns.str.strip()      
+        df.columns.str.strip()
         .str.lower()
-        .str.replace('.', '_')
-        .str.replace(' ', '_')
-        .str.replace('-', '_')
-        .str.replace(',', '_')
-        .str.replace('?', '')           
-        .str.replace('[^a-z0-9_]', '')
-        .str.replace('/', '_'))
+        .str.replace('.', '_', regex=False)
+        .str.replace(' ', '_', regex=False)
+        .str.replace('-', '_', regex=False)
+        .str.replace(',', '_', regex=False)
+        .str.replace('?', '', regex=False)
+        .str.replace('[^a-z0-9_]', '', regex=True)
+        .str.replace('/', '_', regex=False))
     return df
     
     
