@@ -80,9 +80,7 @@ def prefix_cols(df, prefix):
 
 def ffill_cols(df):
     df = df.sort_values(by=['country', 'year']).reset_index(drop=True)
-    df[df.columns] = (
-    df.groupby(['country'])[df.columns]
-    .transform(lambda group: group.ffill()))
+    df[df.columns] = (df.groupby(['country'])[df.columns].transform(lambda group: group.ffill()))
     return df
 
 
