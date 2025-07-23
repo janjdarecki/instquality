@@ -32,7 +32,6 @@ def load(folder="pickles"):
         df = rename_cols(df, *ren)
         df = strip_cols(df)
         df = prefix_cols(df, k)
-        df = ffill_cols(df)
         res[k] = df
     
     return res
@@ -75,12 +74,6 @@ def rename_cols(df, country, year, iso_code_1=None, iso_code_2=None, region=None
 def prefix_cols(df, prefix):
     df.columns = [col if i < 5 else f"{prefix}_{col}"
     for i, col in enumerate(df.columns)]
-    return df
-
-
-def ffill_cols(df):
-    df = df.sort_values(by=['country', 'year']).reset_index(drop=True)
-    df[df.columns] = (df.groupby(['country'])[df.columns].transform(lambda group: group.ffill()))
     return df
 
 

@@ -33,9 +33,6 @@ def merge(dfs, conc):
     merged.country = merged.country.replace("Korea North", "North Korea")
     merged.country = merged.country.replace("Korea, Rep.", "South Korea")
     
-    merged['null_share'] = merged.iloc[:, 4:].isna().mean(axis=1)
-    merged = pop_col(merged, 'null_share', 5)
-    
     return merged
 
 
