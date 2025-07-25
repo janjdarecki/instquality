@@ -2,6 +2,24 @@ import pandas as pd
 import numpy as np
 
 
+def standardise(df):
+    df = df.copy()
+    fixed = ['country', 'year', 'iso_code_1', 'iso_code_2', 'region']
+    data_cols = [c for c in df.columns if c not in fixed and not c.endswith('_f')]
+    fcols     = [c for c in df.columns if c.endswith('_f')]
+    for col in data_cols:
+        mn, mx = df[col].min(skipna=True), df[col].max(skipna=True)
+        df[col] = ((df[col] - mn) / (mx - mn)) * 2 - 1
+        df[col].fillna(0, inplace=True)
+    for col in fcols:
+        df[col].fillna(100, inplace=True)
+        mn, mx = df[col].min(skipna=True), df[col].max(skipna=True)
+        df[col] = ((df[col] - mn) / (mx - mn)) * 2 - 1
+    df = df.drop(columns=['wb_dt_nfl_unep_cd', 'wb_dt_nfl_unid_cd',
+                         'wb_dt_nfl_unep_cd_f', 'wb_dt_nfl_unid_cd_f'], errors='ignore')
+    return df
+
+
 def fill(df):
     df = save_nulls_share(df, 'init')
     ffilled = ffill_cols(df)
@@ -16,7 +34,7 @@ def fill(df):
     
     wfilled = wfilled[[c for c in wfilled.columns if not c.startswith('nulls_')] 
         + [c for c in wfilled.columns if c.startswith('nulls_')]]
-    return wfilled
+    return wfilled.reset_index(drop=True)
 
 
 def compute_distances(s):
@@ -46,7 +64,7 @@ def ffill_cols(df):
     return filled
 
 
-def fill_from(df, source='region', penalty=10):
+def fill_from(df, source, penalty=10):
     df = df.copy()
     fixed = ['country', 'year', 'iso_code_1', 'iso_code_2', 'region'
             ] + [c for c in df.columns if c.startswith('nulls_')]
@@ -76,7 +94,7 @@ def obj_to_num(df):
     return df
 
 
-def save_nulls_share(df, version, no):
+def save_nulls_share(df, version):
     fixed = ['country', 'year', 'iso_code_1', 'iso_code_2', 'region']
     data_cols = [c for c in df.columns if c not in fixed and not c.endswith('_f')]
     df[f'nulls_{version}'] = df[data_cols].isna().mean(axis=1)

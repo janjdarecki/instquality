@@ -9,38 +9,16 @@ def merge(dfs, conc):
                                                  right.drop(columns='country'),
                                                  on=['year', 'iso_code_1', 'iso_code_2', 'region'],
                                                  how='outer'), dfs)
-    
     merged['country'] = merged.groupby('iso_code_1')['country'].transform(lambda col: col.ffill().bfill())
     conc = conc[['country', 'iso_code_1']].drop_duplicates(subset='iso_code_1').rename(columns={'country':'country_fill'})
     merged = merged.merge(conc, on='iso_code_1', how='left')
     merged['country'] = merged['country'].fillna(merged['country_fill'])
     merged = merged.drop(columns='country_fill')
+    merged = replace_names(merged)
+    
+    merged = merged.drop_duplicates(subset=['country', 'year'])
     merged = merged.sort_values(by=['country', 'year']).reset_index(drop=True)
-    
-    merged.country = merged.country.replace("Yemen, Rep.", "Yemen")
-    merged.country = merged.country.replace("Bahamas, The", "Bahamas")
-    merged.country = merged.country.replace("Egypt, Arab Rep.", "Egypt")
-    merged.country = merged.country.replace("Gambia, The", "Gambia")
-    merged.country = merged.country.replace("German Democratic Republic", "Germany East")
-    merged.country = merged.country.replace("Iran, Islamic Rep.", "Iran")
-    merged.country = merged.country.replace("Kyrgyz Republic", "Kyrgyzstan")
-    merged.country = merged.country.replace("Lao PDR", "Laos")
-    merged.country = merged.country.replace("Palestine, State of", "Palestine")
-    merged.country = merged.country.replace("Slovak Republic", "Slovakia")
-    merged.country = merged.country.replace("Russian Federation", "Russia")
-    merged.country = merged.country.replace("Syrian Arab Republic", "Syria")
-    merged.country = merged.country.replace("Venezuela, RB", "Venezuela")
-    merged.country = merged.country.replace("Korea North", "North Korea")
-    merged.country = merged.country.replace("Korea, Rep.", "South Korea")
-    
     return merged
-
-
-def pop_col(df, col, no):
-    cols = list(df.columns)
-    cols.insert(no, cols.pop(cols.index(col)))
-    df = df[cols]
-    return df
 
 
 def apply_concordance(df, conc, name):
@@ -53,33 +31,30 @@ def apply_concordance(df, conc, name):
     
     df = df.dropna(subset=['iso_code_1', 'iso_code_2'])
     cols = ['country', 'year', 'iso_code_1', 'iso_code_2', 'region'] + [c for c in df.columns if c not in {'country', 'year', 'iso_code_1', 'iso_code_2', 'region'}]
+    
     return df[cols]
 
 
 def create_concordance(dfs):
     combined = pd.concat([df[['country', 'iso_code_1', 'iso_code_2']
                             ] for df in dfs], ignore_index=True)
-    
     collapsed = (combined.groupby('country', as_index=False).agg({
             'iso_code_1': lambda s: s.dropna().unique()[0] if len(s.dropna()) else None,
             'iso_code_2': lambda s: s.dropna().unique()[0] if len(s.dropna()) else None}))
-
     collapsed = drop_regions(collapsed)
     collapsed = find_isos(collapsed)
-
+    
     concordance = (collapsed.groupby(['iso_code_1', 'iso_code_2'], as_index=False)
                    .agg(country=('country', lambda names: '; '.join(names))))
-    
     concordance = (concordance.assign(country = concordance['country'].str.split(';')).explode('country'))
     concordance['country'] = concordance['country'].str.strip()
-    
     concordance['region'] = to_region(concordance['iso_code_1'], target='UNregion', src='ISO2')
+    
     missing_regions = {'CS': 'Southern Europe',
                        'DD': 'Western Europe',
                        'SU': 'Eastern Europe',
                        'YU': 'Southern Europe'}
-    concordance['region'] = concordance['region'].fillna(concordance['iso_code_1'].map(missing_regions))
-                   
+    concordance['region'] = concordance['region'].fillna(concordance['iso_code_1'].map(missing_regions))         
     return concordance
 
 
@@ -120,6 +95,25 @@ def to_iso(series, target):
 def to_region(series, target='UNregion', src=None):
     out = coco.convert(series.tolist(), to=target, src=src, not_found=np.nan)
     return pd.Series(out, index=series.index, name=target)
+
+
+def replace_names(df):
+    df.country = df.country.replace("Yemen, Rep.", "Yemen")
+    df.country = df.country.replace("Bahamas, The", "Bahamas")
+    df.country = df.country.replace("Egypt, Arab Rep.", "Egypt")
+    df.country = df.country.replace("Gambia, The", "Gambia")
+    df.country = df.country.replace("German Democratic Republic", "Germany East")
+    df.country = df.country.replace("Iran, Islamic Rep.", "Iran")
+    df.country = df.country.replace("Kyrgyz Republic", "Kyrgyzstan")
+    df.country = df.country.replace("Lao PDR", "Laos")
+    df.country = df.country.replace("Palestine, State of", "Palestine")
+    df.country = df.country.replace("Slovak Republic", "Slovakia")
+    df.country = df.country.replace("Russian Federation", "Russia")
+    df.country = df.country.replace("Syrian Arab Republic", "Syria")
+    df.country = df.country.replace("Venezuela, RB", "Venezuela")
+    df.country = df.country.replace("Korea North", "North Korea")
+    df.country = df.country.replace("Korea, Rep.", "South Korea")
+    return df
 
 
 def drop_regions(df):

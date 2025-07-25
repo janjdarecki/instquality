@@ -5,7 +5,7 @@ import zipfile
 from functools import reduce
 
 
-def load(folder="pickles"):
+def load(folder="files"):
     cfg=[
         ("efw", "EFW.xlsx", "excel", {'header':4,'usecols':range(1,85)}, ("Countries", "Year", "ISO Code 2", "ISO Code 3", "World Bank Region"), None),
         ("fiw", "FIW.xlsx", "excel", {'sheet_name':'FIW06-23','usecols':'A:S'}, ("Country/Territory", "Edition", None, None, "Region"), None),
