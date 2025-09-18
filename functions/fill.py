@@ -2,39 +2,24 @@ import pandas as pd
 import numpy as np
 
 
-def standardise(df):
-    df = df.copy()
-    fixed = ['country', 'year', 'iso_code_1', 'iso_code_2', 'region']
-    data_cols = [c for c in df.columns if c not in fixed and not c.endswith('_f')]
-    fcols     = [c for c in df.columns if c.endswith('_f')]
-    for col in data_cols:
-        mn, mx = df[col].min(skipna=True), df[col].max(skipna=True)
-        df[col] = ((df[col] - mn) / (mx - mn)) * 2 - 1
-        df[col].fillna(0, inplace=True)
-    for col in fcols:
-        df[col].fillna(100, inplace=True)
-        mn, mx = df[col].min(skipna=True), df[col].max(skipna=True)
-        df[col] = ((df[col] - mn) / (mx - mn)) * 2 - 1
-    df = df.drop(columns=['wb_dt_nfl_unep_cd', 'wb_dt_nfl_unid_cd',
-                         'wb_dt_nfl_unep_cd_f', 'wb_dt_nfl_unid_cd_f'], errors='ignore')
-    return df
-
-
 def fill(df):
     df = save_nulls_share(df, 'init')
     ffilled = ffill_cols(df)
     ffilled = save_nulls_share(ffilled, 'ffill')
     ffilled = obj_to_num(ffilled)
+
+    # Commented out due to leakage
+    # rfilled = fill_from(ffilled, 'region')
+    # rfilled = save_nulls_share(rfilled, 'rfill')
+    # wfilled = fill_from(rfilled[rfilled.year>=1970], 'world')
+    # wfilled = save_nulls_share(wfilled, 'wfill')
+    # wfilled = wfilled[[c for c in wfilled.columns if not c.startswith('nulls_')] 
+    #     + [c for c in wfilled.columns if c.startswith('nulls_')]]
+    # return wfilled.reset_index(drop=True)
     
-    rfilled = fill_from(ffilled, 'region')
-    rfilled = save_nulls_share(rfilled, 'rfill')
-    
-    wfilled = fill_from(rfilled[rfilled.year>=1970], 'world')
-    wfilled = save_nulls_share(wfilled, 'wfill')
-    
-    wfilled = wfilled[[c for c in wfilled.columns if not c.startswith('nulls_')] 
-        + [c for c in wfilled.columns if c.startswith('nulls_')]]
-    return wfilled.reset_index(drop=True)
+    ffilled = ffilled[[c for c in ffilled.columns if not c.startswith('nulls_')] 
+        + [c for c in ffilled.columns if c.startswith('nulls_')]]
+    return ffilled.reset_index(drop=True)
 
 
 def compute_distances(s):
