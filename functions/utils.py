@@ -25,3 +25,16 @@ def pop_col(df, col, no):
     cols.insert(no, cols.pop(cols.index(col)))
     df = df[cols]
     return df
+
+
+def revert_to_raw(df):
+    df = df.copy()
+    # force nulls whenever _f != 0
+    for col in [c for c in df.columns if c.endswith("_f")]:
+        base = col[:-2]  # strip "_f"
+        if base in df.columns:   # only set nulls if base column actually exists
+            df.loc[df[col] != 0, base] = pd.NA
+    
+    # drop all *_f and nulls_* columns
+    drop_cols = [c for c in df.columns if c.endswith("_f") or c.startswith("nulls_")]
+    return df.drop(columns=drop_cols, errors="ignore")

@@ -206,6 +206,10 @@ def load_target(filename):
     merged = pd.concat([oecd, wbk])
     merged['yield'] = merged['oecd_YIELD10Y'].fillna(merged['wb_YIELD10Y'])
     merged = merged.drop(columns=['oecd_YIELD10Y', 'wb_YIELD10Y'])
-    merged = merged.sort_values(by=['iso3', 'year', 'source']).reset_index(drop=True)
+
+    merged.year = merged.year.astype(int)
+    merged = merged[merged['yield'].notnull()]
+    merged = merged.sort_values(by=['iso3', 'year', 'source']).reset_index(drop=True) # prefer OECD
     merged = merged.drop_duplicates(subset=['country', 'year'])
+    
     return merged
