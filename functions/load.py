@@ -5,6 +5,7 @@ import zipfile
 from functools import reduce
 from pandas_datareader import wb
 import country_converter as coco
+import sdmx
 
 
 def load(folder="files"):
@@ -152,64 +153,60 @@ def load_wb(zipname):
     return wb
 
 
-def load_target(filename):
-    code = "FM.LBL.BMNY.IR.ZS"
-    wbk = wb.download(indicator=code, country="all", start=1960, end=2024)
-    wbk = wbk.reset_index()[["country","year",code]].rename(columns={code:"wb_YIELD10Y"})
-    wbk["year"] = wbk["year"].astype(int)
-    wbk = wbk[~wbk.country.isin(('Africa Eastern and Southern', 'Africa Western and Central',
-           'Arab World', 'Caribbean small states',
-           'Central Europe and the Baltics', 'Early-demographic dividend',
-           'East Asia & Pacific',
-           'East Asia & Pacific (excluding high income)',
-           'East Asia & Pacific (IDA & IBRD countries)', 'Euro area',
-           'Europe & Central Asia',
-           'Europe & Central Asia (excluding high income)',
-           'Europe & Central Asia (IDA & IBRD countries)', 'European Union',
-           'Fragile and conflict affected situations',
-           'Heavily indebted poor countries (HIPC)', 'High income',
-           'IBRD only', 'IDA & IBRD total', 'IDA blend', 'IDA only',
-           'IDA total', 'Late-demographic dividend',
-           'Latin America & Caribbean',
-           'Latin America & Caribbean (excluding high income)',
-           'Latin America & the Caribbean (IDA & IBRD countries)',
-           'Least developed countries: UN classification',
-           'Low & middle income', 'Low income', 'Lower middle income',
-           'Middle East, North Africa, Afghanistan & Pakistan',
-           'Middle East, North Africa, Afghanistan & Pakistan (excluding high income)',
-           'Middle East, North Africa, Afghanistan & Pakistan (IDA & IBRD)',
-           'Middle income', 'North America', 'Not classified', 'OECD members',
-           'Other small states', 'Pacific island small states',
-           'Post-demographic dividend', 'Pre-demographic dividend',
-           'Small states', 'South Asia', 'South Asia (IDA & IBRD)',
-           'Sub-Saharan Africa', 'Sub-Saharan Africa (excluding high income)',
-           'Sub-Saharan Africa (IDA & IBRD countries)', 'Upper middle income',
-           'World', 'Channel Islands', 'Euro area (19 countries)'))]
-    
-    oecd = pd.read_csv(filename)
-    oecd = oecd[(oecd['Frequency of observation']=='Annual') &
-                (oecd['Unit of measure']=='Percent per annum') &
-                (oecd.TIME_PERIOD>='1960') &
-                (oecd.MEASURE=='IRLT')][['Reference area', 'TIME_PERIOD', 'OBS_VALUE'
-                                        ]].reset_index(drop=True).rename(columns={'Reference area':'country',
-                                                                                  'TIME_PERIOD':'year',
-                                                                                  'OBS_VALUE':'oecd_YIELD10Y'})
-    
-    oecd = oecd[oecd.country!='Euro area (19 countries)']
-    oecd["iso3"] = coco.convert(names=oecd["country"], to="ISO3", not_found=None)
-    wbk["iso3"] = coco.convert(names=wbk["country"], to="ISO3", not_found=None)
-    oecd["country"] = coco.convert(names=oecd["iso3"], to="name_short", not_found=None)
-    wbk["country"] = coco.convert(names=wbk["iso3"], to="name_short", not_found=None)
-    oecd = oecd[['country', "year", "iso3", "oecd_YIELD10Y"]].assign(source="OECD")
-    wbk = wbk[['country', "year", "iso3", "wb_YIELD10Y"]].assign(source="WB")
-    
-    merged = pd.concat([oecd, wbk])
-    merged['yield'] = merged['oecd_YIELD10Y'].fillna(merged['wb_YIELD10Y'])
-    merged = merged.drop(columns=['oecd_YIELD10Y', 'wb_YIELD10Y'])
+def load_target(filename, merge_sources=True):
+    client = sdmx.Client("IMF_DATA")
+    indicators = {
+        "S13BOND_RT_PT_A_PT": "imf_yield_long",
+        "GSTBILY_RT_PT_A_PT": "imf_yield_short"
+    }
+    dfs = []
+    for code, col in indicators.items():
+        msg = client.data("MFS_IR", key=f".{code}.A", params={"startPeriod": "1960", "endPeriod": "2024"})
+        df = sdmx.to_pandas(msg).reset_index().rename(columns={"COUNTRY": "iso3", "TIME_PERIOD": "year", "value": col})[["iso3", "year", col]]
+        dfs.append(df)
+    imf = dfs[0].merge(dfs[1], on=["iso3", "year"], how="outer").sort_values(["iso3", "year"]).reset_index(drop=True)
+    imf = imf[~imf.iso3.isin(["G163", "KOS"])]
+    imf["country"] = coco.convert(names=imf["iso3"], to="name_short", not_found=None)
+    imf["iso3"] = coco.convert(names=imf["country"], to="ISO3", not_found=None)
+    imf = imf[["country", "year", "iso3", "imf_yield_long", "imf_yield_short"]]
 
-    merged.year = merged.year.astype(int)
-    merged = merged[merged['yield'].notnull()]
-    merged = merged.sort_values(by=['iso3', 'year', 'source']).reset_index(drop=True) # prefer OECD
-    merged = merged.drop_duplicates(subset=['country', 'year'])
-    
+    oecd = pd.read_csv(filename)
+    oecd = oecd[(oecd["Frequency of observation"] == "Annual") &
+                (oecd["Unit of measure"] == "Percent per annum") &
+                (oecd["TIME_PERIOD"] >= "1960") &
+                (oecd["MEASURE"].isin(["IRLT", "IR3TIB"]))][["Reference area", "TIME_PERIOD", "MEASURE", "OBS_VALUE"]]
+    oecd = oecd.rename(columns={"Reference area": "country", "TIME_PERIOD": "year", "OBS_VALUE": "value"})
+    oecd = oecd[oecd.country != "Euro area (19 countries)"]
+    oecd["iso3"] = coco.convert(names=oecd["country"], to="ISO3", not_found=None)
+    oecd["country"] = coco.convert(names=oecd["iso3"], to="name_short", not_found=None)
+    oecd = oecd.pivot_table(index=["country", "iso3", "year"], columns="MEASURE", values="value", aggfunc="first").reset_index()
+    oecd = oecd.rename(columns={"IRLT": "oecd_yield_long", "IR3TIB": "oecd_yield_short"})
+    oecd = oecd[["country", "year", "iso3", "oecd_yield_long", "oecd_yield_short"]]
+
+    merged = pd.merge(oecd, imf, on=["country", "year", "iso3"], how="outer")
+    merged["year"] = merged["year"].astype(int)
+    merged = merged.sort_values(["iso3", "year"]).reset_index(drop=True)
+    merged = merged.drop(columns=['oecd_yield_short', 'imf_yield_short']) # leave out for now
+    for col in ["oecd_yield_long", "imf_yield_long"]:
+        too_common = merged[col].value_counts()[lambda x: x >= 5].index
+        merged.loc[merged[col].isin(too_common), col] = np.nan # get rid of placeholder values
+    if merge_sources:
+      merged['yield'] = merged['oecd_yield_long'].fillna(merged['imf_yield_long']) # prefer OECD
+      merged = merged.drop(columns=['oecd_yield_long', 'imf_yield_long'])
     return merged
+
+
+def prep_target(df):
+    us_yields = df.loc[df['country'] == 'United States', ['year', 'tgt_yield']].set_index('year')['tgt_yield']
+    df['tgt_spread'] = df['year'].map(us_yields)
+    df['tgt_spread'] = df['tgt_yield'] - df['tgt_spread']
+
+    df = df.sort_values(['country', 'year'])
+    df['tgt_yield_lag'] = df.groupby('country')['tgt_yield'].shift(-1)
+    df['tgt_spread_lag'] = df.groupby('country')['tgt_spread'].shift(-1)
+
+    df.insert(5, 'tgt_yield', df.pop('tgt_yield'))
+    df.insert(6, 'tgt_spread', df.pop('tgt_spread'))
+    df.insert(7, 'tgt_yield_lag', df.pop('tgt_yield_lag'))
+    df.insert(8, 'tgt_spread_lag', df.pop('tgt_spread_lag'))
+    return df
