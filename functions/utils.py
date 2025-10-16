@@ -38,3 +38,19 @@ def revert_to_raw(df):
     # drop all *_f and nulls_* columns
     drop_cols = [c for c in df.columns if c.endswith("_f") or c.startswith("nulls_")]
     return df.drop(columns=drop_cols, errors="ignore")
+
+
+def prep_target(df):
+    us_yields = df.loc[df['country'] == 'United States', ['year', 'tgt_yield']].set_index('year')['tgt_yield']
+    df['tgt_spread'] = df['year'].map(us_yields)
+    df['tgt_spread'] = df['tgt_yield'] - df['tgt_spread']
+
+    df = df.sort_values(['country', 'year'])
+    df['tgt_yield_lag'] = df.groupby('country')['tgt_yield'].shift(-1)
+    df['tgt_spread_lag'] = df.groupby('country')['tgt_spread'].shift(-1)
+
+    df.insert(5, 'tgt_yield', df.pop('tgt_yield'))
+    df.insert(6, 'tgt_spread', df.pop('tgt_spread'))
+    df.insert(7, 'tgt_yield_lag', df.pop('tgt_yield_lag'))
+    df.insert(8, 'tgt_spread_lag', df.pop('tgt_spread_lag'))
+    return df
