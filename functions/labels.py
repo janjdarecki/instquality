@@ -1,3 +1,8 @@
+tgt_labels = {
+    "tgt_yield": "10-Year Government Bond Yield (%)",
+    "tgt_spread": "10-Year Sovereign Spread over U.S. Treasuries (%)"
+}
+
 fiw_labels = {
     # "fiw_c_t": "Total Composite Score (0–100)",
     # "fiw_status": "Freedom Status (Free / Partly Free / Not Free)",
@@ -33,7 +38,7 @@ ief_labels = {
 }
 
 p5d_labels = {
-    "p5d_flag": "Polity Code Flag (0 = normal, 1–2 = special polity, 3 = transition)",
+    # "p5d_flag": "Polity Code Flag (0 = normal, 1–2 = special polity, 3 = transition)",
     "p5d_fragment": "State Fragmentation Code (0–3, higher = more territorial fragmentation)",
     "p5d_democ": "Democracy Score (0–10)",
     "p5d_autoc": "Autocracy Score (0–10)",
@@ -49,15 +54,125 @@ p5d_labels = {
     "p5d_exrec": "EXREC: Executive Recruitment Component (0–8)",
     "p5d_exconst": "EXCONST: Executive Constraints Component (1–7)",
     "p5d_polcomp": "POLCOMP: Political Competition Component (1–10)",
-    "p5d_regtrans": "Regime Transition Code (−77, −88, 0–99: special transitions or missing)",
+    "p5d_trans_indicator": "Regime Transition Code (1=Interregnum, 2=Transition, 3=Foreign occupation)"
+    #"p5d_regtrans": "Regime Transition Code (−77, −88, 0–99: special transitions or missing)",
 }
 
+pts_labels = { # take mean
+    "pts_pts_a": "Political Terror Scale – Amnesty International (1–5, higher = more terror)",
+    "pts_pts_h": "Political Terror Scale – Human Rights Watch (1–5, higher = more terror)",
+    "pts_pts_s": "Political Terror Scale – State Department (1–5, higher = more terror)",
+    # "pts_na_status_a": "NA Status – Amnesty International (0 = available, 1 = missing / not assessed)",
+    # "pts_na_status_h": "NA Status – Human Rights Watch (0 = available, 1 = missing / not assessed)",
+    # "pts_na_status_s": "NA Status – State Department (0 = available, 1 = missing / not assessed)"
+}
+
+
+wgi_labels = {
+    "wgi_voiceandaccountability_estimate": "Voice & Accountability – Estimate (−2.5 to +2.5)",
+    # "wgi_voiceandaccountability_lower": "Voice & Accountability – Lower Confidence Bound",
+    # "wgi_voiceandaccountability_upper": "Voice & Accountability – Upper Confidence Bound",
+    # "wgi_voiceandaccountability_stderr": "Voice & Accountability – Standard Error",
+    # "wgi_voiceandaccountability_rank": "Voice & Accountability – Percentile Rank (0–100)",
+    # "wgi_voiceandaccountability_numsrc": "Voice & Accountability – Number of Data Sources",
+    "wgi_political_stabilitynoviolence_estimate": "Political Stability & Absence of Violence – Estimate (−2.5 to +2.5)",
+    # "wgi_political_stabilitynoviolence_lower": "Political Stability & Absence of Violence – Lower Confidence Bound",
+    # "wgi_political_stabilitynoviolence_upper": "Political Stability & Absence of Violence – Upper Confidence Bound",
+    # "wgi_political_stabilitynoviolence_stderr": "Political Stability & Absence of Violence – Standard Error",
+    # "wgi_political_stabilitynoviolence_rank": "Political Stability & Absence of Violence – Percentile Rank (0–100)",
+    # "wgi_political_stabilitynoviolence_numsrc": "Political Stability & Absence of Violence – Number of Data Sources",
+    "wgi_governmenteffectiveness_estimate": "Government Effectiveness – Estimate (−2.5 to +2.5)",
+    # "wgi_governmenteffectiveness_lower": "Government Effectiveness – Lower Confidence Bound",
+    # "wgi_governmenteffectiveness_upper": "Government Effectiveness – Upper Confidence Bound",
+    # "wgi_governmenteffectiveness_stderr": "Government Effectiveness – Standard Error",
+    # "wgi_governmenteffectiveness_rank": "Government Effectiveness – Percentile Rank (0–100)",
+    # "wgi_governmenteffectiveness_numsrc": "Government Effectiveness – Number of Data Sources",
+    "wgi_regulatoryquality_estimate": "Regulatory Quality – Estimate (−2.5 to +2.5)",
+    # "wgi_regulatoryquality_lower": "Regulatory Quality – Lower Confidence Bound",
+    # "wgi_regulatoryquality_upper": "Regulatory Quality – Upper Confidence Bound",
+    # "wgi_regulatoryquality_stderr": "Regulatory Quality – Standard Error",
+    # "wgi_regulatoryquality_rank": "Regulatory Quality – Percentile Rank (0–100)",
+    # "wgi_regulatoryquality_numsrc": "Regulatory Quality – Number of Data Sources",
+    "wgi_ruleoflaw_estimate": "Rule of Law – Estimate (−2.5 to +2.5)",
+    # "wgi_ruleoflaw_lower": "Rule of Law – Lower Confidence Bound",
+    # "wgi_ruleoflaw_upper": "Rule of Law – Upper Confidence Bound",
+    # "wgi_ruleoflaw_stderr": "Rule of Law – Standard Error",
+    # "wgi_ruleoflaw_rank": "Rule of Law – Percentile Rank (0–100)",
+    # "wgi_ruleoflaw_numsrc": "Rule of Law – Number of Data Sources",
+    "wgi_controlofcorruption_estimate": "Control of Corruption – Estimate (−2.5 to +2.5)",
+    # "wgi_controlofcorruption_lower": "Control of Corruption – Lower Confidence Bound",
+    # "wgi_controlofcorruption_upper": "Control of Corruption – Upper Confidence Bound",
+    # "wgi_controlofcorruption_stderr": "Control of Corruption – Standard Error",
+    # "wgi_controlofcorruption_rank": "Control of Corruption – Percentile Rank (0–100)",
+    # "wgi_controlofcorruption_numsrc": "Control of Corruption – Number of Data Sources"
+}
+
+wb_iq_labels = {
+    # Country Policy and Institutional Assessment (CPIA) dimensions - only developing countries
+    # "wb_iq_cpa_breg_xq": "CPIA – Business Regulatory Environment (1–6)",
+    # "wb_iq_cpa_debt_xq": "CPIA – Debt Policy (1–6)",
+    # "wb_iq_cpa_econ_xq": "CPIA – Economic Management (overall, 1–6)",
+    # "wb_iq_cpa_envr_xq": "CPIA – Environmental Policies (1–6)",
+    # "wb_iq_cpa_finq_xq": "CPIA – Financial Sector Quality (1–6)",
+    # "wb_iq_cpa_fins_xq": "CPIA – Financial Sector Policies (1–6)",
+    # "wb_iq_cpa_fisp_xq": "CPIA – Fiscal Policy (1–6)",
+    # "wb_iq_cpa_gndr_xq": "CPIA – Gender Equality Policies (1–6)",
+    # "wb_iq_cpa_hres_xq": "CPIA – Human Resources and Social Inclusion (1–6)",
+    # "wb_iq_cpa_irai_xq": "CPIA – IDA Resource Allocation Index (overall composite, 1–6)",
+    # "wb_iq_cpa_macr_xq": "CPIA – Macroeconomic Management (1–6)",
+    # "wb_iq_cpa_padm_xq": "CPIA – Public Administration Quality (1–6)",
+    # "wb_iq_cpa_pres_xq": "CPIA – Property Rights and Rule-based Governance (1–6)",
+    # "wb_iq_cpa_prop_xq": "CPIA – Property Rights and Governance (1–6)",
+    # "wb_iq_cpa_prot_xq": "CPIA – Social Protection & Labor (1–6)",
+    # "wb_iq_cpa_pubs_xq": "CPIA – Public Sector Management (1–6)",
+    # "wb_iq_cpa_revn_xq": "CPIA – Revenue Mobilization (1–6)",
+    # "wb_iq_cpa_soci_xq": "CPIA – Social Inclusion / Equity (1–6)",
+    # "wb_iq_cpa_strc_xq": "CPIA – Structural Policies (1–6)",
+    # "wb_iq_cpa_trad_xq": "CPIA – Trade Policy (1–6)",
+    # "wb_iq_cpa_tran_xq": "CPIA – Transparency, Accountability, and Corruption in the Public Sector (1–6)",
+    # Statistical Capacity Index (SCI)
+    "wb_iq_sci_mthd": "Statistical Capacity Index – Methodology (0–100)",
+    "wb_iq_sci_ovrl": "Statistical Capacity Index – Overall (0–100)",
+    "wb_iq_sci_prdc": "Statistical Capacity Index – Periodicity & Timeliness (0–100)",
+    "wb_iq_sci_srce": "Statistical Capacity Index – Source Data (0–100)",
+    # Social Progress Index (SPI)
+    "wb_iq_spi_ovrl": "Social Progress Index – Overall Score (0–100)",
+    "wb_iq_spi_pil1": "Social Progress Index – Basic Human Needs (0–100)",
+    "wb_iq_spi_pil2": "Social Progress Index – Foundations of Wellbeing (0–100)",
+    "wb_iq_spi_pil3": "Social Progress Index – Opportunity (0–100)",
+    "wb_iq_spi_pil4": "Social Progress Index – Environmental Quality / Inclusion (0–100)",
+    "wb_iq_spi_pil5": "Social Progress Index – Personal Rights / Freedom (0–100)",
+    # World Economic Forum (WEF) indicators
+    "wb_iq_wef_cust_xq": "WEF – Burden of Customs Procedures (1–7)",
+    "wb_iq_wef_port_xq": "WEF – Port Infrastructure Quality (1–7)"
+}
+
+
+controls_labels = {
+    "wb_ny_gdp_mktp_kd_zg": "Real GDP Growth (annual %, constant prices)",
+    "wb_fp_cpi_totl_zg": "Inflation (CPI, annual %)",
+    "wb_ny_gdp_defl_kd_zg": "GDP Deflator (annual % change)",
+    "wb_gc_dod_totl_gd_zs": "Central Government Debt (% of GDP)",
+    "wb_bn_cab_xoka_gd_zs": "Current Account Balance (% of GDP)",
+    "wb_pa_nus_fcrf": "Official Exchange Rate (local currency per USD, period average)",
+    "wb_ne_trd_gnfs_zs": "Trade Openness (% of GDP, goods and services)",
+    "wb_tx_val_fuel_zs_un": "Fuel Exports (% of merchandise exports)",
+    "wb_ny_gdp_minr_rt_zs": "Mining Output (% of GDP)",
+    "wb_ny_gdp_petr_rt_zs": "Oil & Gas Output (% of GDP)",
+    "wb_fx_dep_yoy": "Foreign Exchange Depreciation (year-on-year %)",
+    "wb_gc_dod_totl_gd_zs_chg": "Change in Government Debt (% of GDP, year-on-year)",
+    "wb_gdp_growth_vol3y": "Volatility of Real GDP Growth (3-year rolling SD)",
+    "wb_infl_vol3y": "Volatility of Inflation (3-year rolling SD)",
+    "wb_ca_bal_ma3": "Current Account Balance (3-year moving average, % of GDP)"
+}
+
+
 efw_labels = {
-    # --- Summary measures ---
+    # Summary measures
     "efw_economic_freedom_summary_index": "Economic Freedom Summary Index (0–10)",
     "efw_rank": "Country Rank (1 = most free)",
     "efw_quartile": "Freedom Quartile (1 = highest freedom, 4 = lowest)",
-    # --- Area 1: Size of Government ---
+    # Area 1: Size of Government 
     "efw_1a_government_consumption": "1A. Government Consumption (0–10)",
     "efw_1b_transfers_and_subsidies": "1B. Transfers and Subsidies (0–10)",
     "efw_1c_government_investment": "1C. Government Investment (0–10)",
@@ -67,7 +182,7 @@ efw_labels = {
     "efw_ie_state_ownership": "1E. State Ownership of Assets (0–10)",
     "efw_1_size_of_government": "Area 1. Size of Government (0–10)",
     "efw_area_1_rank": "Area 1 Rank (lower = better)",
-    # --- Area 2: Legal System & Property Rights ---
+    # Area 2: Legal System & Property Rights 
     "efw_2a_judicial_independence": "2A. Judicial Independence (0–10)",
     "efw_2b_impartial_courts": "2B. Impartial Courts (0–10)",
     "efw_2c_property_rights": "2C. Protection of Property Rights (0–10)",
@@ -80,14 +195,14 @@ efw_labels = {
     "efw_2_legal_system_property_rights_with_gender_adjustment": "Area 2. Legal System & Property Rights (gender-adjusted, 0–10)",
     "efw_2_legal_system_property_rights_no_gender_adjustment": "Area 2. Legal System & Property Rights (no gender adjustment, 0–10)",
     "efw_area_2_rank": "Area 2 Rank (lower = better)",
-    # --- Area 3: Sound Money ---
+    # Area 3: Sound Money 
     "efw_3a_money_growth": "3A. Money Growth (0–10)",
     "efw_3b_standard_deviation_of_inflation": "3B. Standard Deviation of Inflation (0–10)",
     "efw_3c_inflation": "3C. Inflation: Most Recent Year (0–10)",
     "efw_3d_foreign_currency_bank_accounts": "3D. Freedom to Own Foreign Currency Bank Accounts (0–10)",
     "efw_3_sound_money": "Area 3. Sound Money (0–10)",
     "efw_area_3_rank": "Area 3 Rank (lower = better)",
-    # --- Area 4: Freedom to Trade Internationally ---
+    # Area 4: Freedom to Trade Internationally 
     "efw_4ai_trade_tax_revenue": "4A(i). Trade Tax Revenue (% of trade, 0–10)",
     "efw_4aii_mean_tariff_rate": "4A(ii). Mean Tariff Rate (0–10)",
     "efw_4aiii_standard_deviation_of_tariff_rates": "4A(iii). Tariff Rate Dispersion (0–10)",
@@ -103,7 +218,7 @@ efw_labels = {
     "efw_4d_controls_of_the_movement_of_capital_and_people": "4D. Controls of Movement of Capital and People (0–10)",
     "efw_4_freedom_to_trade_internationally": "Area 4. Freedom to Trade Internationally (0–10)",
     "efw_area_4_rank": "Area 4 Rank (lower = better)",
-    # --- Area 5: Regulation ---
+    # Area 5: Regulation 
     "efw_5ai_ownership_of_banks": "5A(i). Ownership of Banks (0–10)",
     "efw_5aii_private_sector_credit": "5A(ii). Private Sector Credit (0–10)",
     "efw_5aiii_interest_rate_controls_negative_real_interest_rates": "5A(iii). Interest Rate Controls / Negative Real Rates (0–10)",
@@ -127,7 +242,7 @@ efw_labels = {
     "efw_5d_freedom_to_enter_markets_and_compete": "5D. Freedom to Enter Markets and Compete (0–10)",
     "efw_5_regulation": "Area 5. Regulation (0–10)",
     "efw_area_5_rank": "Area 5 Rank (lower = better)",
-    # --- Raw data indicators ---
+    # Raw data indicators 
     # "efw_data": "Underlying data (Area 1A)",
     # "efw_data_1": "Underlying data (Area 1B)",
     # "efw_data_2": "Underlying data (Area 1C)",
