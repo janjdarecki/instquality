@@ -1,12 +1,14 @@
 import pandas as pd
 import numpy as np
+import seaborn as sns
 import matplotlib.pyplot as plt
 import matplotlib.colors as mcolors
-from pandas.api.types import is_numeric_dtype
-import seaborn as sns
 import matplotlib.patches as mpatches
 from matplotlib.ticker import MaxNLocator
 from matplotlib.ticker import MultipleLocator
+from pandas.api.types import is_numeric_dtype
+from scipy.spatial.distance import squareform
+from scipy.cluster.hierarchy import linkage, dendrogram
 
 
 def coverage_panel(df, prefixes=("efw", "fiw", "ief", "p5d", "pts", "wgi", "wb", "tgt"), start=1960, end=2024, missing_color="#f5f5f5"):
@@ -210,6 +212,51 @@ def coverage_per_version(df):
     plt.show()
 
 
+def vars_timeseries(df, label_map, countries, colors):
+    df_plot = df[df["country"].isin(countries)].copy()
+    df_plot["year"] = df_plot["year"].astype(int)
+
+    for variable in [v for v in label_map.keys() if v in df.columns]:
+        label = label_map.get(variable, variable)
+        df_var = df_plot[df_plot[variable].notnull()].copy()
+        if df_var.empty:
+            continue
+
+        # Infer dataset prefix (e.g. "efw" → "[EFW]")
+        prefix = variable.split("_")[0].upper()
+        title_prefix = f"[{prefix}] "
+
+        xmin, xmax = df_var["year"].min(), df_var["year"].max()
+        plt.figure(figsize=(8, 4.5), dpi=125)
+        ax = plt.gca()
+        ax.set_facecolor("#f5f5f5")
+
+        for c, col in zip(countries, colors):
+            data_country = df_var[df_var["country"] == c]
+            if data_country.empty:
+                continue
+            plt.plot(
+                data_country["year"],
+                data_country[variable],
+                label=c,
+                linewidth=2.2,
+                color=col
+            )
+
+        plt.title(f"{title_prefix}{label}", fontsize=12.5)
+        plt.grid(alpha=0.4, linewidth=0.6)
+        for side in ("top", "right", "left", "bottom"):
+            ax.spines[side].set_alpha(0)
+        plt.legend(frameon=False, bbox_to_anchor=(1, 1.02), loc='upper left', fontsize=11)
+        ax.set_xlim(xmin - 2, xmax + 2)
+        ax.xaxis.set_major_locator(MultipleLocator(10))
+        plt.xticks(rotation=0)
+        plt.tight_layout()
+        plt.show()
+
+
+##### target #######
+
 def target_coverage(df, excl_missing=False):
   df2 = df.copy()
   if excl_missing:
@@ -243,53 +290,36 @@ def target_coverage(df, excl_missing=False):
   plt.show()
 
 
-def vars_timeseries(df, label_map, countries, colors):
-    df_plot = df[df["country"].isin(countries)].copy()
-    df_plot["year"] = df_plot["year"].astype(int)
-    
-    for variable in [v for v in label_map.keys() if v in df.columns]:
-        label = label_map.get(variable, variable)
-        df_var = df_plot[df_plot[variable].notnull()].copy()
-        if df_var.empty:
-            continue
-        xmin, xmax = df_var["year"].min(), df_var["year"].max()
-        plt.figure(figsize=(8, 4.5), dpi=125)
-        ax = plt.gca()
-        ax.set_facecolor("#f5f5f5")
-        
-        for c, col in zip(countries, colors):
-            data_country = df_var[df_var["country"] == c]
-            if data_country.empty:
-                continue
-            plt.plot(
-                data_country["year"],
-                data_country[variable],
-                label=c,
-                linewidth=2.2,
-                color=col
-            )
-        
-        plt.title(label, fontsize=12.5)
-        plt.grid(alpha=0.4, linewidth=0.6)
-        for side in ("top", "right", "left", "bottom"):
-            ax.spines[side].set_alpha(0)
-        plt.legend(frameon=False, bbox_to_anchor=(1, 1.025), fontsize=11)
-        ax.set_xlim(xmin-2, xmax+2)
-        ax.xaxis.set_major_locator(MultipleLocator(10))   # major tick every 5 years
-        # ax.xaxis.set_minor_locator(MultipleLocator(5))   # minor tick every 1 year
-        plt.xticks(rotation=0)
-        plt.tight_layout()
-        plt.show()
+def target_coverage_start(df, cumulative=False, color="#4a90e2"):
+    dfn = df.dropna(subset=["tgt_yield"])[["country", "year"]].copy()
+    dfn["year"] = dfn["year"].astype(int)
+    first_years = dfn.groupby("country", as_index=False)["year"].min().rename(columns={"year": "first_year"})
+    first_counts = first_years["first_year"].value_counts().sort_index()
+    active_counts = dfn.groupby("year")["country"].nunique().sort_index()
+    year_index = pd.Index(range(1960, 2025), name="year")
+    counts = (active_counts if cumulative else first_counts).reindex(year_index, fill_value=0).astype(int)
 
+    plt.figure(figsize=(6, 4), dpi=125)
+    ax = plt.gca()
+    ax.set_facecolor("#f5f5f5")
+    ax.bar(counts.index, counts.values, color=color, edgecolor="none", width=0.8)
+    plt.title("Number of countries with target data per year" if cumulative else "Number of countries by first year of available target data", fontsize=12.5)
+    plt.grid(alpha=0.4, linewidth=0.6, axis="y", linestyle='-')
+    plt.grid(alpha=0.4, linewidth=0.6, axis="x", linestyle='-')
+    for side in ("top", "right", "left", "bottom"):
+        ax.spines[side].set_alpha(0)
+    ax.set_xlim(1959, 2025)
+    ax.xaxis.set_major_locator(MultipleLocator(10))
+    ax.tick_params(axis="x", rotation=0)
+    plt.tight_layout()
+    plt.show()
 
-# target
 
 def target_timeseries(df, typ, pct1, pct2):
   if typ=='yield':
     df_tgt = df[["year", "tgt_yield"]].dropna()
   elif typ=='spread':
     df_tgt = df.copy()
-    df_tgt["tgt_spread"] = df_tgt["tgt_yield"] - df_tgt["year"].map(df_tgt.query("country=='United States'").set_index("year")["tgt_yield"])
     df_tgt = df_tgt[["year", "tgt_spread"]].dropna()
   quantiles = df_tgt.groupby("year")[f"tgt_{typ}"].quantile([pct1, 0.5, pct2]).unstack()
   quantiles.columns = ["p10", "median", "p90"]
@@ -338,30 +368,6 @@ def compare_target_sources(df, mode="both"):
 
 
 def region_violin(df):
-  region_map = {
-      "Southern Europe": "Europe",
-      "Eastern Europe": "Europe",
-      "Western Europe": "Europe",
-      "Northern Europe": "Europe",
-      "Central Asia": "Asia",
-      "Eastern Asia": "Asia",
-      "South-eastern Asia": "Asia",
-      "Southern Asia": "Asia",
-      "Western Asia": "Asia",
-      "Northern Africa": "Africa",
-      "Western Africa": "Africa",
-      "Eastern Africa": "Africa",
-      "Middle Africa": "Africa",
-      "Southern Africa": "Africa",
-      "Northern America": "Americas",
-      "Central America": "Americas",
-      "South America": "Americas",
-      "Caribbean": "Americas",
-      "Australia and New Zealand": "Australia & Oceania",
-      "Melanesia": "Australia & Oceania",
-      "Polynesia": "Australia & Oceania"
-  }
-
   df["continent"] = df["region"].map(region_map)
   df_group = (df.groupby(["country", "continent"], as_index=False)["tgt_yield"].mean())
   df_group = df_group[df_group.tgt_yield.notnull()]
@@ -388,3 +394,259 @@ def region_violin(df):
   plt.grid()
   plt.axvline(x=0, color="red", linestyle="-")
   plt.show()
+
+
+def target_histogram(df, variable="tgt_yield", country_average=True):
+    df = df.copy()
+    df["continent"] = df["region"].map(region_map)
+    df = df[df[variable].notnull()]
+    if country_average:
+        df = df.groupby(["country", "continent"], as_index=False)[variable].mean()
+        n_bins = 25
+        x_min, x_max = [None, None]
+        opt = "country average "
+    else:
+        n_bins = 250
+        opt = ""
+        if variable == 'tgt_spread':
+          x_min, x_max = [-7, 22]
+        else:
+          x_min, x_max = [-1.5, 27]
+
+    continents = df["continent"].dropna().unique()
+    palette = sns.color_palette("Dark2", n_colors=len(continents))
+    color_map = dict(zip(sorted(continents), palette))
+    data_by_continent = [df.loc[df["continent"] == c, variable] for c in sorted(continents)]
+    plt.figure(figsize=(6.5, 4), dpi=125)
+    ax = plt.gca()
+    ax.set_facecolor("#f5f5f5")
+    
+    bins = np.histogram_bin_edges(df[variable], bins=n_bins)
+    plt.hist(data_by_continent,
+             bins=bins,
+             stacked=True,
+             color=[color_map[c] for c in sorted(continents)],
+             label=sorted(continents),
+             alpha=0.9)
+    plt.title(f"Distribution of {opt}{variable.replace('tgt_', '')} values", fontsize=12.5)
+    plt.xlabel(f"{variable.replace('tgt_', '').capitalize()} (%)")
+    plt.ylabel("Count")
+    plt.grid(alpha=0.4, linewidth=0.6)
+    if x_max is not None:
+      plt.xlim(x_min, x_max)
+    for side in ("top", "right", "left", "bottom"):
+        ax.spines[side].set_alpha(0)
+    plt.legend(title="", frameon=True, fontsize=11, bbox_to_anchor=(1, 1))
+    plt.tight_layout()
+    plt.show()
+
+
+def target_timeseries_per_var_quartile(df, target_col, totals, colors=None):
+    dfp = df.copy()
+    dfp["year"] = dfp["year"].astype(int)
+    variables = [k for k in totals.keys() if k in dfp.columns]
+    if colors is None:
+        colors = ["#1f77b4", "#2ca02c", "#ff7f0e", "#d62728"]
+
+    title_metric = {"tgt_spread": "Mean 10-Year Sovereign Spread over U.S. Treasuries (%)",
+                    "tgt_yield": "Mean 10-Year Government Bond Yield (%)"}.get(target_col, f"Mean {target_col}")
+    legend_labels = {4: "Best quartile", 3: "Second best", 2: "Second worst", 1: "Worst quartile"}
+
+    for var in variables:
+        dfv = dfp if var != "p5d_polity" else dfp[dfp["year"] <= 2018]
+        d = dfv[["country","year",var,target_col]].dropna(subset=[var,target_col]).copy()
+        if d.empty:
+            continue
+
+        def _quartiles_year(g):
+            s = g[var].astype(float)
+            if s.nunique() < 4:
+                r = s.rank(pct=True, method="average")
+                return pd.cut(r, bins=[0,.25,.5,.75,1], include_lowest=True, labels=[1,2,3,4]).astype("Int64")
+            try:
+                return pd.qcut(s, 4, labels=[1,2,3,4]).astype("Int64")
+            except Exception:
+                r = s.rank(pct=True, method="average")
+                return pd.cut(r, bins=[0,.25,.5,.75,1], include_lowest=True, labels=[1,2,3,4]).astype("Int64")
+
+        d["quartile"] = d.groupby("year", group_keys=False).apply(_quartiles_year)
+        g = d.dropna(subset=["quartile"]).groupby(["year","quartile"])[target_col].mean().reset_index()
+        if g.empty:
+            continue
+        p = g.pivot(index="year", columns="quartile", values=target_col).sort_index()
+        if p.empty or pd.isna(p.index.min()):
+            continue
+
+        xmin, xmax = int(p.index.min()), int(p.index.max())
+        plt.figure(figsize=(8, 4.5), dpi=125)
+        ax = plt.gca(); ax.set_facecolor("#f5f5f5")
+        for q, col in zip([4,3,2,1], colors):
+            if q in p.columns:
+                plt.plot(p.index, p[q], label=legend_labels[q], linewidth=2.2, color=col)
+
+        prefix = var.split("_")[0].upper()
+        title_prefix = f"[{prefix}] "
+        var_label = totals.get(var, var)
+        plt.title(f"{title_metric} by\n{title_prefix}{var_label} quartile", fontsize=12.5)
+        plt.grid(alpha=0.4, linewidth=0.6)
+        for side in ("top","right","left","bottom"):
+            ax.spines[side].set_alpha(0)
+        plt.legend(frameon=False, bbox_to_anchor=(1, 1.02), loc="upper left", fontsize=11)
+        ax.set_xlim(xmin - 2, xmax + 2)
+        ax.xaxis.set_major_locator(MultipleLocator(10))
+        plt.xticks(rotation=0)
+        plt.tight_layout()
+        plt.show()
+
+
+#### correlations #####
+
+def correlation_across_datasets(df,label_dicts,method="pearson"):
+    groups={k:[c for c in v.keys() if c in df.columns and is_numeric_dtype(df[c])] for k,v in label_dicts.items()}
+    groups={k:[c for c in cols if df[c].notna().sum()>2] for k,cols in groups.items()}
+    groups={k:cols for k,cols in groups.items() if cols}
+    keys=list(groups.keys())
+    labels=[k.upper() if k!="controls" else "Controls" for k in keys]
+    M=pd.DataFrame(index=labels,columns=labels,dtype=float)
+    for (k1,l1) in zip(keys,labels):
+        cols1=groups[k1]
+        for (k2,l2) in zip(keys,labels):
+            cols2=groups[k2]
+            C=df[cols1+cols2].corr(method=method,min_periods=3)
+            if k1==k2:
+                a=C.loc[cols1,cols1].abs().values
+                v=np.nanmean(a[np.triu_indices_from(a,1)])
+            else:
+                v=np.nanmean(C.loc[cols1,cols2].abs().values)
+            M.loc[l1,l2]=v
+    fig,ax=plt.subplots(figsize=(8.6,7.0),dpi=125)
+    cmap="coolwarm"; vmin,vmax=0,1
+    sns.heatmap(M.astype(float),annot=True,fmt=".2f",vmin=vmin,vmax=vmax,cmap=cmap,square=True,linewidths=.7,linecolor="#f5f5f5",cbar=False,mask=M.isna(),annot_kws={"fontsize":9})
+    ax.set_title("Average absolute correlations between datasets",pad=8,fontsize=12.3,fontweight="regular")
+    ax.set_xticklabels(ax.get_xticklabels(),rotation=0)
+    ax.set_yticklabels(ax.get_yticklabels(),rotation=0)
+    for t in ax.get_xticklabels()+ax.get_yticklabels():
+        t.set_color("black"); t.set_fontsize(10)
+    for s in ("top","right","left","bottom"):
+        ax.spines[s].set_visible(False)
+    norm=mcolors.Normalize(vmin=vmin,vmax=vmax); smap=plt.cm.get_cmap(cmap)
+    for txt in ax.texts:
+        try: val=float(txt.get_text())
+        except ValueError: continue
+        r,g,b,_=smap(norm(val)); lum=0.2126*r+0.7152*g+0.0722*b
+        txt.set_color("black" if lum>0.6 else "white"); txt.set_fontweight("medium")
+    n=len(M)
+    for i in range(n):
+        ax.add_patch(plt.Rectangle((i,i),1,1,fill=False,ec="#dddddd",lw=0.6,alpha=0.7))
+    ax.tick_params(length=0,pad=4)
+    plt.tight_layout(); plt.show()
+    return M
+
+
+def top_correlations(df,label_dicts,target="tgt_spread",top_n=50):
+    all_labels={k:v for d in label_dicts.values() for k,v in d.items()}
+    vars_=[c for c in all_labels if c in df.columns and is_numeric_dtype(df[c]) and c!=target]
+    sub=df[[target]+vars_].dropna(subset=[target])
+    corrs=sub.corr(method="pearson")[target].abs().sort_values(ascending=False)
+    corrs=corrs.drop(target,errors="ignore").head(top_n)
+    formatted=[]
+    for v in corrs.index:
+        if v.startswith("wb_iq_"):
+            prefix = "WB"
+        elif v.startswith("wb_"):
+            prefix = "CTRL"
+        else:
+            prefix = v.split("_")[0].upper()
+        name = all_labels.get(v, v)
+        formatted.append(f"[{prefix}] {name}")
+    base_height=10
+    base_n=40
+    fig_height=base_height*(top_n/base_n)
+    fig,ax=plt.subplots(figsize=(8.6,fig_height),dpi=125)
+    sns.barplot(x=corrs.values,y=formatted,orient="h",palette="crest",ax=ax)
+    for i,v in enumerate(corrs.values):
+        ax.text(v+0.01,i,f"{v:.2f}",va="center",fontsize=8)
+    ax.set_ylabel("")
+    ax.set_title(f"Top {top_n} variables with highest absolute Pearson correlation vs. 10-year sovereign spread over U.S. treasuries",
+                 pad=12.5, x=-0.1, fontsize=15,fontweight="regular")
+    ax.grid(True,axis="x",alpha=0.4)
+    sns.despine(left=True,bottom=True)
+    plt.tight_layout()
+    plt.show()
+    return corrs
+
+
+def correlation_across_top_vars(df,label_dicts,target="tgt_spread",top_n=10,exclude_ctrl=False):
+    all_labels={k:v for d in label_dicts.values() for k,v in d.items()}
+    def _is_ctrl(v): return v.startswith("wb_") and not v.startswith("wb_iq_")
+    vars_=[c for c in all_labels if c in df.columns and is_numeric_dtype(df[c]) and c!=target]
+    if exclude_ctrl: vars_=[v for v in vars_ if not _is_ctrl(v)]
+    sub=df[[target]+vars_].dropna(subset=[target])
+    ranked=sub.corr(method="pearson")[target].abs().sort_values(ascending=False)
+    ranked=ranked.drop(target,errors="ignore")
+    top=ranked.head(top_n).index.tolist()
+    corr=sub[top].corr(method="pearson").abs()
+    def _pref(v):
+        if v.startswith("wb_iq_"): return "WB"
+        elif v.startswith("wb_"):  return "CTRL"
+        else:                      return v.split("_")[0].upper()
+    labels=[f"[{_pref(v)}] {all_labels.get(v,v)}" for v in corr.columns]
+    fig,ax=plt.subplots(figsize=(top_n+4,top_n-1),dpi=125)
+    sns.heatmap(corr,vmin=0,vmax=1,cmap="coolwarm",square=True,annot=True,fmt=".2f",
+                linewidths=.7,linecolor="#f0f0f0",cbar=False)
+    ax.set_xticklabels(labels,rotation=45,ha="right",fontsize=12)
+    ax.set_yticklabels(labels,rotation=0,fontsize=13.5)
+    title=f"Correlation heatmap across top {top_n} variables with highest absolute Pearson\ncorrelations with 10-year sovereign bond spread"
+    ax.set_title(title,fontsize=15,fontweight="regular",pad=15)
+    plt.tight_layout(); plt.show()
+    return corr
+
+
+def dendrogram_for_top_vars(corr, label_dicts, method="average"):
+    A=corr.abs().copy(); np.fill_diagonal(A.values,1); dist=1-A
+    Z=linkage(squareform(dist,checks=False),method=method)
+    all_labels={k:v for d in label_dicts.values() for k,v in d.items()}
+    def _pref(v):
+        if v.startswith("wb_iq_"): return "WB"
+        elif v.startswith("wb_"):  return "CTRL"
+        else: return v.split("_")[0].upper()
+    labels=[f"[{_pref(c)}] {all_labels.get(c,c)}" for c in A.columns]
+    fig,ax=plt.subplots(figsize=(9,5.5),dpi=125,facecolor="white")
+    ax.set_facecolor("#f5f5f5")
+    dendrogram(Z,labels=labels,orientation="right",leaf_font_size=9,
+               color_threshold=0.7,above_threshold_color="#444444",ax=ax)
+    for s in ax.spines.values(): s.set_visible(False)
+    ax.grid(False)
+    ax.set_xlabel("1 − absolute correlation",fontsize=9,labelpad=8)
+    ax.tick_params(axis="x",labelsize=8)
+    ax.set_title("Hierarchical clustering of top 15 institutional variables with highest absolute Pearson correlations with target variable",
+                 fontsize=11,x=0.1,fontweight="regular",pad=10)
+    plt.tight_layout()
+    plt.show()
+
+
+#### region map #####
+
+region_map = {
+    "Southern Europe": "Europe",
+    "Eastern Europe": "Europe",
+    "Western Europe": "Europe",
+    "Northern Europe": "Europe",
+    "Central Asia": "Asia",
+    "Eastern Asia": "Asia",
+    "South-eastern Asia": "Asia",
+    "Southern Asia": "Asia",
+    "Western Asia": "Asia",
+    "Northern Africa": "Africa",
+    "Western Africa": "Africa",
+    "Eastern Africa": "Africa",
+    "Middle Africa": "Africa",
+    "Southern Africa": "Africa",
+    "Northern America": "Americas",
+    "Central America": "Americas",
+    "South America": "Americas",
+    "Caribbean": "Americas",
+    "Australia and New Zealand": "Australia & Oceania",
+    "Melanesia": "Australia & Oceania",
+    "Polynesia": "Australia & Oceania"
+}

@@ -7,8 +7,8 @@ fiw_labels = {
     # "fiw_c_t": "Total Composite Score (0–100)",
     # "fiw_status": "Freedom Status (Free / Partly Free / Not Free)",
     "fiw_total": "Overall Freedom Score (0–100)",
-    "fiw_pr_rating": "Political Rights Rating (1–7, lower = freer)",
-    "fiw_cl_rating": "Civil Liberties Rating (1–7, lower = freer)",
+    # "fiw_pr_rating": "Political Rights Rating (1–7, lower = freer)",
+    # "fiw_cl_rating": "Civil Liberties Rating (1–7, lower = freer)",
     "fiw_pr": "Political Rights (0–40)",
     "fiw_cl": "Civil Liberties (0–60)",
     "fiw_a": "A. Electoral Process (0–12)",
@@ -42,8 +42,8 @@ p5d_labels = {
     "p5d_fragment": "State Fragmentation Code (0–3, higher = more territorial fragmentation)",
     "p5d_democ": "Democracy Score (0–10)",
     "p5d_autoc": "Autocracy Score (0–10)",
-    "p5d_polity": "Polity Score (Democracy – Autocracy, range −10 to +10)",
-    "p5d_polity2": "Polity2 Score (Revised Polity, −10 to +10, interpolated)",
+    # "p5d_polity": "Polity Score (Democracy – Autocracy, range −10 to +10)",
+    # "p5d_polity2": "Polity2 Score (Revised Polity, −10 to +10, interpolated)",
     "p5d_durable": "Regime Durability (years since last regime change)",
     "p5d_xrreg": "XRREG: Regulation of Chief Executive Recruitment (0–3)",
     "p5d_xrcomp": "XRCOMP: Competitiveness of Executive Recruitment (0–3)",
@@ -150,6 +150,9 @@ wb_iq_labels = {
 
 controls_labels = {
     "wb_ny_gdp_mktp_kd_zg": "Real GDP Growth (annual %, constant prices)",
+    "wb_ny_gdp_pcap_pp_kd": "GDP per capita, PPP",
+    "wb_ny_gdp_pcap_kd": "GDP per capita (constant LCU)",
+    "wb_ny_gdp_pcap_cd": "GDP per capita (current USD)",
     "wb_fp_cpi_totl_zg": "Inflation (CPI, annual %)",
     "wb_ny_gdp_defl_kd_zg": "GDP Deflator (annual % change)",
     "wb_gc_dod_totl_gd_zs": "Central Government Debt (% of GDP)",
@@ -170,8 +173,8 @@ controls_labels = {
 efw_labels = {
     # Summary measures
     "efw_economic_freedom_summary_index": "Economic Freedom Summary Index (0–10)",
-    "efw_rank": "Country Rank (1 = most free)",
-    "efw_quartile": "Freedom Quartile (1 = highest freedom, 4 = lowest)",
+    # "efw_rank": "Country Rank (1 = most free)",
+    # "efw_quartile": "Freedom Quartile (1 = highest freedom, 4 = lowest)",
     # Area 1: Size of Government 
     "efw_1a_government_consumption": "1A. Government Consumption (0–10)",
     "efw_1b_transfers_and_subsidies": "1B. Transfers and Subsidies (0–10)",
@@ -181,7 +184,7 @@ efw_labels = {
     "efw_1d_top_marginal_tax_rate": "1D. Top Marginal Tax Rate (combined, 0–10)",
     "efw_ie_state_ownership": "1E. State Ownership of Assets (0–10)",
     "efw_1_size_of_government": "Area 1. Size of Government (0–10)",
-    "efw_area_1_rank": "Area 1 Rank (lower = better)",
+    # "efw_area_1_rank": "Area 1 Rank (lower = better)",
     # Area 2: Legal System & Property Rights 
     "efw_2a_judicial_independence": "2A. Judicial Independence (0–10)",
     "efw_2b_impartial_courts": "2B. Impartial Courts (0–10)",
@@ -194,14 +197,14 @@ efw_labels = {
     "efw_gender_disparity_index": "Gender Disparity Index (0–10, higher = more equality)",
     "efw_2_legal_system_property_rights_with_gender_adjustment": "Area 2. Legal System & Property Rights (gender-adjusted, 0–10)",
     "efw_2_legal_system_property_rights_no_gender_adjustment": "Area 2. Legal System & Property Rights (no gender adjustment, 0–10)",
-    "efw_area_2_rank": "Area 2 Rank (lower = better)",
+    # "efw_area_2_rank": "Area 2 Rank (lower = better)",
     # Area 3: Sound Money 
     "efw_3a_money_growth": "3A. Money Growth (0–10)",
     "efw_3b_standard_deviation_of_inflation": "3B. Standard Deviation of Inflation (0–10)",
-    "efw_3c_inflation": "3C. Inflation: Most Recent Year (0–10)",
+    # "efw_3c_inflation": "3C. Inflation: Most Recent Year (0–10)", # included as control
     "efw_3d_foreign_currency_bank_accounts": "3D. Freedom to Own Foreign Currency Bank Accounts (0–10)",
     "efw_3_sound_money": "Area 3. Sound Money (0–10)",
-    "efw_area_3_rank": "Area 3 Rank (lower = better)",
+    # "efw_area_3_rank": "Area 3 Rank (lower = better)",
     # Area 4: Freedom to Trade Internationally 
     "efw_4ai_trade_tax_revenue": "4A(i). Trade Tax Revenue (% of trade, 0–10)",
     "efw_4aii_mean_tariff_rate": "4A(ii). Mean Tariff Rate (0–10)",
@@ -217,7 +220,7 @@ efw_labels = {
     "efw_4div_protection_of_foreign_assets": "4D(iv). Protection of Foreign-Owned Assets (0–10)",
     "efw_4d_controls_of_the_movement_of_capital_and_people": "4D. Controls of Movement of Capital and People (0–10)",
     "efw_4_freedom_to_trade_internationally": "Area 4. Freedom to Trade Internationally (0–10)",
-    "efw_area_4_rank": "Area 4 Rank (lower = better)",
+    # "efw_area_4_rank": "Area 4 Rank (lower = better)",
     # Area 5: Regulation 
     "efw_5ai_ownership_of_banks": "5A(i). Ownership of Banks (0–10)",
     "efw_5aii_private_sector_credit": "5A(ii). Private Sector Credit (0–10)",
@@ -241,7 +244,7 @@ efw_labels = {
     "efw_5diii_distorton_of_the_business_environment": "5D(iii). Distortion of the Business Environment (0–10)",
     "efw_5d_freedom_to_enter_markets_and_compete": "5D. Freedom to Enter Markets and Compete (0–10)",
     "efw_5_regulation": "Area 5. Regulation (0–10)",
-    "efw_area_5_rank": "Area 5 Rank (lower = better)",
+    # "efw_area_5_rank": "Area 5 Rank (lower = better)",
     # Raw data indicators 
     # "efw_data": "Underlying data (Area 1A)",
     # "efw_data_1": "Underlying data (Area 1B)",
@@ -255,4 +258,30 @@ efw_labels = {
     # "efw_data_9": "Underlying data (4A(ii))",
     # "efw_data_10": "Underlying data (4A(iii))"
 }
+
+
+region_map = {
+    "Southern Europe": "Europe",
+    "Eastern Europe": "Europe",
+    "Western Europe": "Europe",
+    "Northern Europe": "Europe",
+    "Central Asia": "Asia",
+    "Eastern Asia": "Asia",
+    "South-eastern Asia": "Asia",
+    "Southern Asia": "Asia",
+    "Western Asia": "Asia",
+    "Northern Africa": "Africa",
+    "Western Africa": "Africa",
+    "Eastern Africa": "Africa",
+    "Middle Africa": "Africa",
+    "Southern Africa": "Africa",
+    "Northern America": "Americas",
+    "Central America": "Americas",
+    "South America": "Americas",
+    "Caribbean": "Americas",
+    "Australia and New Zealand": "Australia & Oceania",
+    "Melanesia": "Australia & Oceania",
+    "Polynesia": "Australia & Oceania"
+}
+
 

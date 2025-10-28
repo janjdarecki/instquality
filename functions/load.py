@@ -122,25 +122,37 @@ def prep_wgi(filename, sheet_name):
 
 
 def restrict_and_engineer(df):
-    # core macro
+    # core macroeconomic controls
     cols = [
-        "country_name","year",
-        "ny_gdp_mktp_kd_zg","fp_cpi_totl_zg","ny_gdp_defl_kd_zg",
-        "gc_dod_totl_gd_zs","bn_cab_xoka_gd_zs","pa_nus_fcrf",
-        "ne_trd_gnfs_zs","tx_val_fuel_zs_un","ny_gdp_minr_rt_zs",
-        "ny_gdp_petr_rt_zs"
+        "country_name", "year",
+        "ny_gdp_mktp_kd_zg",      # Real GDP growth (%)
+        "ny_gdp_pcap_pp_kd",      # GDP per capita, PPP
+        "ny_gdp_pcap_kd",         # GDP per capita (constant LCU)
+        "ny_gdp_pcap_cd",         # GDP per capita (current USD)
+        "fp_cpi_totl_zg",         # Inflation, consumer prices (%)
+        "ny_gdp_defl_kd_zg",      # GDP deflator (%)
+        "gc_dod_totl_gd_zs",      # Central government debt (% of GDP)
+        "bn_cab_xoka_gd_zs",      # Current account balance (% of GDP)
+        "pa_nus_fcrf",            # Official exchange rate (LCU per USD)
+        "ne_trd_gnfs_zs",         # Trade (% of GDP)
+        "tx_val_fuel_zs_un",      # Fuel exports (% of merchandise exports)
+        "ny_gdp_minr_rt_zs",      # Mining and quarrying, value added (% of GDP)
+        "ny_gdp_petr_rt_zs"       # Oil rents (% of GDP)
     ]
-    # include institutional quality measures
-    cols += [c for c in df.columns if c.startswith("iq")]
-    df = df[cols].copy().sort_values(["country_name","year"])
 
-    # engineer some features
-    df["fx_dep_yoy"] = df.groupby("country_name")["pa_nus_fcrf"].transform(lambda s: np.log(s).diff())
-    df["gc_dod_totl_gd_zs_chg"] = df.groupby("country_name")["gc_dod_totl_gd_zs"].transform(lambda s: s.diff())
-    df["gdp_growth_vol3y"] = df.groupby("country_name")["ny_gdp_mktp_kd_zg"].transform(lambda s: s.rolling(3,min_periods=2).std())
-    df["infl_vol3y"] = df.groupby("country_name")["fp_cpi_totl_zg"].transform(lambda s: s.rolling(3,min_periods=2).std())
-    df["ca_bal_ma3"] = df.groupby("country_name")["bn_cab_xoka_gd_zs"].transform(lambda s: s.rolling(3,min_periods=2).mean())
+    # include institutional quality indicators (WGI, EFW, SPI, etc.)
+    cols += [c for c in df.columns if c.startswith("iq")]
+    df = df[cols].copy().sort_values(["country_name", "year"])
+
+    # engineered features
+    df["fx_dep_yoy"] = df.groupby("country_name")["pa_nus_fcrf"].transform(lambda s: np.log(s).diff())  # YoY log-change in exchange rate (FX depreciation)
+    df["gc_dod_totl_gd_zs_chg"] = df.groupby("country_name")["gc_dod_totl_gd_zs"].transform(lambda s: s.diff())  # Δ government debt (% GDP)
+    df["gdp_growth_vol3y"] = df.groupby("country_name")["ny_gdp_mktp_kd_zg"].transform(lambda s: s.rolling(3, min_periods=2).std())  # 3-year rolling volatility of GDP growth
+    df["infl_vol3y"] = df.groupby("country_name")["fp_cpi_totl_zg"].transform(lambda s: s.rolling(3, min_periods=2).std())  # 3-year rolling volatility of inflation
+    df["ca_bal_ma3"] = df.groupby("country_name")["bn_cab_xoka_gd_zs"].transform(lambda s: s.rolling(3, min_periods=2).mean())  # 3-year moving average of current account balance (% GDP)
+
     return df
+
 
 
 def load_wb(zipname):
