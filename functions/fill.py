@@ -5,10 +5,10 @@ import numpy as np
 def fill(df):
     df = save_nulls_share(df, 'init')
     ffilled = ffill_cols(df)
-    ffilled = save_nulls_share(ffilled, 'ffill')
+    # ffilled = save_nulls_share(ffilled, 'ffill')
     ffilled = obj_to_num(ffilled)
 
-    # Commented out due to leakage
+    # Commented out due to cross-sectional leakage
     # rfilled = fill_from(ffilled, 'region')
     # rfilled = save_nulls_share(rfilled, 'rfill')
     # wfilled = fill_from(rfilled[rfilled.year>=1970], 'world')
@@ -72,10 +72,12 @@ def fill_from(df, source, penalty=10):
 
 
 def obj_to_num(df):
-    for col in ['efw_data_3', 'efw_data_4', 'efw_5bv_cost_of_worker_dismissal']:
+    for col in [
+      #'efw_data_3', 'efw_data_4',
+       'efw_5bv_cost_of_worker_dismissal']:
         df[col] = pd.to_numeric(df[col], errors='coerce')
-    df['fiw_c_t'] = df['fiw_c_t'].map({'c': 0, 't': 1}).astype(float)
-    df['fiw_status'] = df['fiw_status'].map({'PF': 0.5, 'NF': 0, 'F': 1}).astype(float)
+    # df['fiw_c_t'] = df['fiw_c_t'].map({'c': 0, 't': 1}).astype(float)
+    # df['fiw_status'] = df['fiw_status'].map({'PF': 0.5, 'NF': 0, 'F': 1}).astype(float)
     return df
 
 

@@ -16,6 +16,7 @@ fiw_labels = {
     "fiw_c": "C. Functioning of Government (0–12)",
     # "fiw_add_q": "Additional Political Rights Adjustment (–4 to 0)",
     # "fiw_add_a": "Adjusted Political Rights (0–40)",
+    "fiw_f": "F. Rule of Law (0-16)",
     "fiw_d": "D. Freedom of Expression & Belief (0–16)",
     "fiw_e": "E. Associational & Organizational Rights (0–12)",
     "fiw_g": "G. Personal Autonomy & Individual Rights (0–16)",

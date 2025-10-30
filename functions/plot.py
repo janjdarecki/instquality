@@ -119,7 +119,7 @@ def coverage_per_variable(df):
         "p5d": "Polity5D Project",
         "pts": "Political Terror Scale",
         "wgi": "Worldwide Governance Indicators",
-        "wb":  "World Bank (macro)",
+        "wb":  "World Bank",
         "tgt": "10Y Gov't yield (target)"
     }
 
@@ -160,7 +160,9 @@ def coverage_per_variable(df):
     plt.ylabel("Number of variables")
     plt.title(f"Per-variable coverage distribution by dataset - {df.country.nunique()} countries, 1960-2024")
     plt.xticks(np.arange(0, 101, 20), [f"{v}" for v in np.arange(0, 101, 20)])
-    plt.legend(title="", frameon=True, ncols=1, loc='upper right', fontsize=11)
+    plt.legend(title="", frameon=True, ncols=1,
+     #loc='upper right',
+      fontsize=11)
     for side in ("top", "right", "left", "bottom"):
         ax.spines[side].set_alpha(0)
     plt.xlim(0, 100)
@@ -623,6 +625,35 @@ def dendrogram_for_top_vars(corr, label_dicts, method="average"):
                  fontsize=11,x=0.1,fontweight="regular",pad=10)
     plt.tight_layout()
     plt.show()
+
+
+#### methods #####
+
+def coverage_progression(df):
+  dff = df.dropna(subset=["tgt_spread_lag"]).copy()
+  dff = dff.sort_values(["country", "year"])
+  dff["cum_share"] = (dff.groupby("country").cumcount() + 1) / dff.groupby("country")["year"].transform("count")
+  cross_years = dff.loc[dff["cum_share"] >= 0.75].groupby("country")["year"].min()
+  split_year = int(cross_years.median())
+  avg_split_year = int(cross_years.mean())
+
+  plt.figure(figsize=(6.5,4), dpi=125)
+  ax = plt.gca()
+  ax.set_facecolor("#f5f5f5")
+  for _, g in dff.groupby("country"):
+      plt.plot(g["year"], g["cum_share"] * 100, lw=0.9, alpha=0.55)
+  plt.axhline(75, color="#d62728", ls="--", lw=1)
+  plt.title("Per-country progression of coverage (%)", pad=10)
+  for spine in ["top", "left", "bottom", "right"]:
+      ax.spines[spine].set_visible(False)
+  ax.spines["left"].set_alpha(0.4)
+  ax.spines["bottom"].set_alpha(0.4)
+  ax.grid(False)
+  ax.patch.set_alpha(1)
+  plt.ylim(0, 102)
+  plt.tight_layout()
+  plt.show()
+
 
 
 #### region map #####
