@@ -143,14 +143,7 @@ def restrict_and_engineer(df):
     # include institutional quality indicators (WGI, EFW, SPI, etc.)
     cols += [c for c in df.columns if c.startswith("iq")]
     df = df[cols].copy().sort_values(["country_name", "year"])
-
-    # engineered features
-    df["fx_dep_yoy"] = df.groupby("country_name")["pa_nus_fcrf"].transform(lambda s: np.log(s).diff())  # YoY log-change in exchange rate (FX depreciation)
-    df["gc_dod_totl_gd_zs_chg"] = df.groupby("country_name")["gc_dod_totl_gd_zs"].transform(lambda s: s.diff())  # Δ government debt (% GDP)
-    df["gdp_growth_vol3y"] = df.groupby("country_name")["ny_gdp_mktp_kd_zg"].transform(lambda s: s.rolling(3, min_periods=2).std())  # 3-year rolling volatility of GDP growth
-    df["infl_vol3y"] = df.groupby("country_name")["fp_cpi_totl_zg"].transform(lambda s: s.rolling(3, min_periods=2).std())  # 3-year rolling volatility of inflation
-    df["ca_bal_ma3"] = df.groupby("country_name")["bn_cab_xoka_gd_zs"].transform(lambda s: s.rolling(3, min_periods=2).mean())  # 3-year moving average of current account balance (% GDP)
-
+    
     return df
 
 

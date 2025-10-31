@@ -73,5 +73,22 @@ def prep_target(df):
     df = df.sort_values(['country', 'year'])
     df['tgt_spread_lag'] = df.groupby('country')['tgt_spread'].shift(-1)
     df.insert(5, 'tgt_spread_lag', df.pop('tgt_spread_lag'))
-    df = df.drop(columns=['tgt_spread', 'tgt_yield'])
+    df.insert(6, 'tgt_spread', df.pop('tgt_spread'))
+    df = df.drop(columns=['tgt_yield'])
+    df = df[df.country!='United States'] # remove US as an observation
+    return df
+
+
+def engineer_lag_vars(df, macro_vars, iq_vars, id_cols=["country", "year", "iso_code_1", "iso_code_2", "region"]):
+    df = df.sort_values(id_cols).copy()
+    n_before = df.shape[1]
+    for var in macro_vars:
+        df[f"{var}_delta"] = df.groupby("country")[var].diff(1)
+        df[f"{var}_ma3"]   = df.groupby("country")[var].rolling(3, min_periods=1).mean().reset_index(level=0, drop=True)
+    for var in iq_vars:
+        df[f"{var}_delta3"] = df.groupby("country")[var].diff(3)
+    df["tgt_spread_prev"] = df.groupby("country")["tgt_spread"].shift(1)
+    df.insert(7, 'tgt_spread_prev', df.pop('tgt_spread_prev'))
+    n_after = df.shape[1]
+    print(f"Added {n_after - n_before} engineered columns")
     return df
