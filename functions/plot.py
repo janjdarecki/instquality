@@ -629,8 +629,8 @@ def dendrogram_for_top_vars(corr, label_dicts, method="average"):
 
 #### methods #####
 
-def coverage_progression(df):
-  dff = df.dropna(subset=["tgt_spread_lag"]).copy()
+def coverage_progression(df, yname='tgt_spread'):
+  dff = df.dropna(subset=[yname]).copy()
   dff = dff.sort_values(["country", "year"])
   dff["cum_share"] = (dff.groupby("country").cumcount() + 1) / dff.groupby("country")["year"].transform("count")
   cross_years = dff.loc[dff["cum_share"] >= 0.75].groupby("country")["year"].min()
