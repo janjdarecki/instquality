@@ -1,5 +1,6 @@
 import pandas as pd
 import numpy as np
+import re
 
 id_cols = ["country", "year", "iso_code_1", "iso_code_2", "region"]
 
@@ -35,6 +36,11 @@ def engineer_lag_vars(df, macro_vars, iq_vars, id_cols=["country", "year", "iso_
     df = df.sort_values(id_cols).copy()
     n_before = df.shape[1]
 
+    # Deltas
+    for var in macro_vars + iq_vars:
+        df[f"{var}_delta"] = df.groupby("country")[var].diff(1)
+        df[f"{var}_delta3"] = df.groupby("country")[var].diff(3)
+
     # Lagged levels 
     for lag in [1, 3, 5]:
         for var in macro_vars + iq_vars:
@@ -53,4 +59,8 @@ def engineer_lag_vars(df, macro_vars, iq_vars, id_cols=["country", "year", "iso_
     n_after = df.shape[1]
     print(f"Added {n_after - n_before} engineered columns")
     return df
+
+
+def filter_cols(cols, exclude_endings):
+    return [c for c in cols if not any(c.endswith(ending) for ending in exclude_endings)]
 

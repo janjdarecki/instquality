@@ -36,8 +36,9 @@ def compute_distances(s):
 def ffill_cols(df):
     df = df.sort_values(['country', 'year']).reset_index(drop=True)
     filled = df.copy()
-    fixed = ['country', 'year', 'iso_code_1', 'iso_code_2', 'region', 'nulls_init']
-    cols_to_fill = [c for c in df.columns if c not in fixed]
+    id_cols = ["country", "year", "iso_code_1", "iso_code_2", "region"]
+    exclude = id_cols + [c for c in df.columns if c.startswith("tgt_")]
+    cols_to_fill = [c for c in df.columns if c not in exclude]
     for country in df['country'].unique():
         print(f"F-filling {country} values")
         mask = df['country'] == country
