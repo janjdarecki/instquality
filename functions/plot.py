@@ -173,7 +173,7 @@ def coverage_per_variable(df):
 def coverage_per_version(df):
     remove = (df.groupby('country')['tgt_yield'].apply(lambda x: x.notna().any()).loc[lambda s: ~s].index)
     df_tgt = df[~df['country'].isin(remove)].copy()
-    df_res = df_tgt[df_tgt.year>=1990]
+    df_res = df_tgt[df_tgt['tgt_yield'].notna()]
     exclude_cols = ["country", "year", "region", "iso_code_1", "iso_code_2"]
     cols1 = [c for c in df.columns if c not in exclude_cols]
     cols2 = [c for c in df_tgt.columns if c not in exclude_cols]
@@ -197,7 +197,7 @@ def coverage_per_version(df):
         ax.hist(data, bins=bins, histtype="step", linewidth=1.6, color=color)
     draw_hist(cov_df,  c_df,  "Starting dataframe")
     draw_hist(cov_tgt, c_tgt, "Restricted to countries\nwith target data")
-    draw_hist(cov_res, c_res, "With additional\nrestriction from 1990")
+    draw_hist(cov_res, c_res, "Restricted to rows\nwith target data")
 
     ax.grid(axis="y", which="major", linewidth=0.6, alpha=0.5)
     ax.grid(axis="x", which="both",  linewidth=0.4, alpha=0.25)
@@ -205,7 +205,7 @@ def coverage_per_version(df):
     plt.ylabel("Number of variables")
     plt.title("Per-variable coverage distribution (overlay across data versions)")
     plt.xticks(np.arange(0, 101, 20), [f"{v}" for v in np.arange(0, 101, 20)])
-    plt.legend(fontsize=10, frameon=True, ncols=3, bbox_to_anchor=(0.99,1))
+    plt.legend(fontsize=10, frameon=True, ncols=3, bbox_to_anchor=(0.97,1))
     plt.ylim(0,68)
     plt.xlim(0,100)
     for side in ("top", "right", "left", "bottom"):

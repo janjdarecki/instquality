@@ -147,7 +147,6 @@ def restrict_and_engineer(df):
     return df
 
 
-
 def load_wb(zipname):
     with zipfile.ZipFile("files/WB_DATA.zip") as z:   # open the .zip
         with z.open("WB_DATA_d950d0cd269a601150c0afd03b234ee2.csv") as f:      # open the CSV file inside

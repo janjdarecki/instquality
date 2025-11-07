@@ -5,6 +5,22 @@ import re
 id_cols = ["country", "year", "iso_code_1", "iso_code_2", "region"]
 
 
+def handle_p5d_vals(df):
+    # save transition indicators
+    df["p5d_trans_indicator"] = np.select(
+        [df["p5d_polity"] == -77,  # interregnum, mark as 1
+        df["p5d_polity"] == -88,  # transition, mark as 2
+        df["p5d_polity"] == -99   # foreign interruption, mark as 3
+        ], [1, 2, 3],  # codes for each case
+        default=0   # normal years
+    )
+    
+    # force nans on rest
+    p5d_cols = [c for c in df.columns if c.startswith(f"p5d_")]
+    df[p5d_cols] = df[p5d_cols].replace([-99, -88, -77], np.nan) # replace the values
+    return df
+
+
 def prep_target(df):
     # create spread var
     us_yields = (
@@ -61,6 +77,28 @@ def engineer_lag_vars(df, macro_vars, iq_vars, id_cols=["country", "year", "iso_
     return df
 
 
-def filter_cols(cols, exclude_endings):
-    return [c for c in cols if not any(c.endswith(ending) for ending in exclude_endings)]
+def remove_highly_correlated(df, threshold):
+    id_cols = ["country", "year", "iso_code_1", "iso_code_2", "region"]
+    exclude = id_cols + [c for c in df.columns if c.startswith("tgt_")]
+    feature_cols = [c for c in df.columns if c not in exclude]
+    
+    df_features = df[feature_cols]
+    corr_matrix = df_features.corr().abs()
+    upper_triangle = np.triu(np.ones(corr_matrix.shape), k=1).astype(bool)
+    upper_corr = corr_matrix.where(upper_triangle)
+    to_drop = set()
+    
+    for column in upper_corr.columns:
+        high_corr = upper_corr[column][upper_corr[column] > threshold]
+        for corr_col in high_corr.index:
+            if corr_col not in to_drop and column not in to_drop:
+                col_count = df_features[column].notna().sum()
+                corr_col_count = df_features[corr_col].notna().sum()
+                if col_count > corr_col_count:
+                    to_drop.add(corr_col)
+                else:
+                    to_drop.add(column)
+    
+    cols_to_drop = sorted(list(to_drop))
+    return cols_to_drop
 
