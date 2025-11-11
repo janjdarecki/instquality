@@ -3,6 +3,7 @@ tgt_labels = {
     "tgt_spread": "10-Year Sovereign Spread over U.S. Treasuries (%)"
 }
 
+
 fiw_labels = {
     # "fiw_c_t": "Total Composite Score (0–100)",
     # "fiw_status": "Freedom Status (Free / Partly Free / Not Free)",
@@ -22,6 +23,7 @@ fiw_labels = {
     "fiw_g": "G. Personal Autonomy & Individual Rights (0–16)",
 }
 
+
 ief_labels = {
     "ief_overall_score": "Overall Economic Freedom Score (0–100)",
     "ief_property_rights": "Property Rights (0–100)",
@@ -37,6 +39,7 @@ ief_labels = {
     "ief_investment_freedom": "Investment Freedom (0–100)",
     "ief_financial_freedom": "Financial Freedom (0–100)"
 }
+
 
 p5d_labels = {
     # "p5d_flag": "Polity Code Flag (0 = normal, 1–2 = special polity, 3 = transition)",
@@ -58,6 +61,7 @@ p5d_labels = {
     "p5d_trans_indicator": "Regime Transition Code (1=Interregnum, 2=Transition, 3=Foreign occupation)"
     #"p5d_regtrans": "Regime Transition Code (−77, −88, 0–99: special transitions or missing)",
 }
+
 
 pts_labels = { # take mean
     "pts_pts_a": "Political Terror Scale – Amnesty International (1–5, higher = more terror)",
@@ -258,6 +262,19 @@ efw_labels = {
     # "efw_data_8": "Underlying data (4A(i))",
     # "efw_data_9": "Underlying data (4A(ii))",
     # "efw_data_10": "Underlying data (4A(iii))"
+}
+
+
+all_labels = {
+    **tgt_labels,
+    **fiw_labels,
+    **ief_labels,
+    **p5d_labels,
+    **pts_labels,
+    **wgi_labels,
+    **wb_iq_labels,
+    **controls_labels,
+    **efw_labels,
 }
 
 

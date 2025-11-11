@@ -48,6 +48,13 @@ def prep_target(df):
     return df[new_order]
 
 
+def check_split_year(df, yname, share=0.75):
+    dff = df.dropna(subset=[yname]).sort_values("year")
+    dff["cum_share"] = (dff.reset_index().index + 1) / len(dff)
+    split_year = dff.loc[dff["cum_share"] >= share, "year"].iloc[0]
+    return split_year
+    
+
 def engineer_lag_vars(df, macro_vars, iq_vars, id_cols=["country", "year", "iso_code_1", "iso_code_2", "region"]):
     df = df.sort_values(id_cols).copy()
     n_before = df.shape[1]
