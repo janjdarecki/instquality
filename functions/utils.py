@@ -48,10 +48,10 @@ def prep_target(df):
     return df[new_order]
 
 
-def check_split_year(df, yname, share=0.75):
+def check_split_year(df, yname, split_share=0.75):
     dff = df.dropna(subset=[yname]).sort_values("year")
     dff["cum_share"] = (dff.reset_index().index + 1) / len(dff)
-    split_year = dff.loc[dff["cum_share"] >= share, "year"].iloc[0]
+    split_year = dff.loc[dff["cum_share"] >= split_share, "year"].iloc[0]
     return split_year
     
 
