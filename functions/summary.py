@@ -5,7 +5,6 @@ import re
 from pathlib import Path
 import matplotlib.pyplot as plt
 from sklearn.metrics import mean_squared_error, r2_score
-from IPython.display import display
 
 from functions.utils import check_split_year
 
@@ -71,7 +70,7 @@ def show_simple_benchmark(df, split_share):
     )
 
 
-# base signal regressions
+# base sigal regressions
 
 
 def get_label(var_name, all_labels):
@@ -94,7 +93,9 @@ def summarise_signal_regressions(specs_dir, base_name, models, benchmark_dfs):
         benchmark_df = benchmark_dfs.get(split_share)
         if benchmark_df is None or benchmark_df.empty:
             continue
-        bench_r2 = benchmark_df.loc[benchmark_df["horizon"] == 1, "R2_test"].values[0]
+        bench_r2 = benchmark_df.loc[
+            benchmark_df["horizon"] == 1, "R2_test"
+        ].values[0]
         bench_rmse = benchmark_df.loc[
             benchmark_df["horizon"] == 1, "RMSE_test"
         ].values[0]
@@ -128,11 +129,16 @@ def summarise_signal_regressions(specs_dir, base_name, models, benchmark_dfs):
                         "Model": label,
                         "R²_test": best["R²_test"],
                         "RMSE_test": best["RMSE_test"],
-                        "ΔR² vs Benchmark (p.p.)": (best["R²_test"] - bench_r2) * 100,
-                        "ΔRMSE vs Benchmark (bps)": (best["RMSE_test"] - bench_rmse)
+                        "ΔR² vs Benchmark (p.p.)": (best["R²_test"] - bench_r2)
+                        * 100,
+                        "ΔRMSE vs Benchmark (bps)": (
+                            best["RMSE_test"] - bench_rmse
+                        )
                         * 100,
                         "H1=Incremental signal present": reject,
-                        "DM_stat": best["DM_stat"] if pd.notna(best["DM_stat"]) else None,
+                        "DM_stat": (
+                            best["DM_stat"] if pd.notna(best["DM_stat"]) else None
+                        ),
                         "DM_p": best["DM_p"] if pd.notna(best["DM_p"]) else None,
                     }
                 )
@@ -145,19 +151,25 @@ def summarise_signal_regressions(specs_dir, base_name, models, benchmark_dfs):
             df["ΔR² vs Benchmark (p.p.)"] = df["ΔR² vs Benchmark (p.p.)"].map(
                 lambda x: f"{x:+.2f}"
             )
-            df["ΔRMSE vs Benchmark (bps)"] = df["ΔRMSE vs Benchmark (bps)"].map(
-                lambda x: f"{x:+.1f}"
-            )
+            df["ΔRMSE vs Benchmark (bps)"] = df[
+                "ΔRMSE vs Benchmark (bps)"
+            ].map(lambda x: f"{x:+.1f}")
             df["DM_stat"] = df["DM_stat"].map(
                 lambda x: f"{x:.2f}" if pd.notna(x) else "—"
             )
-            df["DM_p"] = df["DM_p"].map(lambda x: f"{x:.3f}" if pd.notna(x) else "—")
+            df["DM_p"] = df["DM_p"].map(
+                lambda x: f"{x:.3f}" if pd.notna(x) else "—"
+            )
 
+            print("```text")
+            print("=" * 120)
             print(
                 f"INCREMENTAL SIGNAL REGRESSIONS — PERFORMANCE SUMMARY ({split_label} split)"
             )
             print(f"Benchmark R²: {bench_r2:.4f}, Benchmark RMSE: {bench_rmse:.4f}")
-            display(df)
+            print("=" * 120)
+            print(df.to_string(index=False))
+            print("```")
             print()
 
 
@@ -248,7 +260,8 @@ def summarise_priced_in_regressions(
             merged[present_cols]
             .applymap(
                 lambda x: float(str(x).strip("*"))
-                if isinstance(x, (int, float, str)) and str(x).strip("*") not in ["", "-"]
+                if isinstance(x, (int, float, str))
+                and str(x).strip("*") not in ["", "-"]
                 else 0
             )
             .mean(axis=1)
@@ -261,21 +274,33 @@ def summarise_priced_in_regressions(
             "Average", ascending=False
         )
         results[model_key] = merged.set_index("label")
-
     if summary_rows:
-        df_sum = pd.DataFrame(summary_rows).sort_values(["Horizon", "Split", "Model"])
-        print("PRICED‑IN LEVEL REGRESSIONS — PERFORMANCE SUMMARY")
-        display(df_sum)
-        print(
-            "\n* denotes variables selected in >80% of regressions (stability selection not performed for Ridge)\n"
+        df_sum = pd.DataFrame(summary_rows).sort_values(
+            ["Horizon", "Split", "Model"]
         )
-
-    for model_key, dfm in results.items():
-        print(f"{model_key.upper()} — SHAP IMPORTANCE BY TRAIN‑TEST SPLIT (%)")
-        display(dfm.reset_index())
+        print("```text")
+        print("=" * 90)
+        print("PRICED‑IN LEVEL REGRESSIONS — PERFORMANCE SUMMARY")
+        print("=" * 90)
+        print(df_sum.to_string(index=False))
         print()
-
+        print(
+            "* denotes variables selected in >80% of regressions (stability selection not performed for Ridge)"
+        )
+        print("```")
+        print()
+    for model_key, dfm in results.items():
+        print("```text")
+        print("=" * 120)
+        print(f"{model_key.upper()} — SHAP IMPORTANCE BY TRAIN‑TEST SPLIT (%)")
+        print("=" * 120)
+        print(dfm.reset_index().to_string(index=False))
+        print("```")
+        print()
+    print("```text")
+    print("=" * 140)
     print("FINAL AVERAGE SHAP IMPORTANCE BY MODEL (%)")
+    print("=" * 140)
     all_label_set = sorted({v for df in results.values() for v in df.index})
     final_df = pd.DataFrame(index=all_label_set)
     for m, dfm in results.items():
@@ -284,7 +309,13 @@ def summarise_priced_in_regressions(
     final_df["Average"] = final_df.mean(axis=1).round(2)
     cols = ["Average"] + [
         c
-        for c in ["LASSO", "RIDGE", "EN (L1=0.25)", "EN (L1=0.5)", "EN (L1=0.75)"]
+        for c in [
+            "LASSO",
+            "RIDGE",
+            "EN (L1=0.25)",
+            "EN (L1=0.5)",
+            "EN (L1=0.75)",
+        ]
         if c in final_df.columns
     ]
     final_df = (
@@ -292,7 +323,8 @@ def summarise_priced_in_regressions(
         .round(2)
         .sort_values("Average", ascending=False)
     )
-    display(final_df)
+    print(final_df.to_string())
+    print("```")
 
 
 # temporal benchmark
@@ -338,8 +370,11 @@ def print_temporal_signal_stats(specs_dir, base_name, models, benchmark_dfs):
         bench_r2 = benchmark_df.set_index("horizon")["R2_test"]
         bench_rmse = benchmark_df.set_index("horizon")["RMSE_test"]
 
-        print(f"{split_label} TRAIN-TEST SET SPLIT".center(100))
-        print()
+        print("```text")
+        print("-" * 135)
+        print(f"{split_label} TRAIN-TEST SET SPLIT".center(135))
+        print("-" * 135)
+        print("```")
 
         for model in models:
             variants = [0.5] if model == "elastic" else [None]
@@ -359,9 +394,9 @@ def print_temporal_signal_stats(specs_dir, base_name, models, benchmark_dfs):
                     if df.empty or "R²_test" not in df:
                         continue
                     best = df.loc[df["R²_test"].idxmax()]
-                    bench_r2_h, bench_rmse_h = bench_r2.get(h, np.nan), bench_rmse.get(
+                    bench_r2_h, bench_rmse_h = bench_r2.get(
                         h, np.nan
-                    )
+                    ), bench_rmse.get(h, np.nan)
                     r2_val, rmse_val, dm_stat, dm_p = (
                         best["R²_test"],
                         best["RMSE_test"],
@@ -396,7 +431,9 @@ def print_temporal_signal_stats(specs_dir, base_name, models, benchmark_dfs):
                         dr2_disp = f"{d_r2:+.2f}" if pd.notna(d_r2) else "—"
                         drmse_disp = f"{d_rmse:+.1f}" if pd.notna(d_rmse) else "—"
 
-                    rmse_disp = ">100" if rmse_val > 100 else f"{rmse_val:.4f}"
+                    rmse_disp = (
+                        ">100" if rmse_val > 100 else f"{rmse_val:.4f}"
+                    )
                     all_rows.append(
                         {
                             "horizon": h,
@@ -404,21 +441,30 @@ def print_temporal_signal_stats(specs_dir, base_name, models, benchmark_dfs):
                             "RMSE_test": rmse_disp,
                             "ΔR² vs Benchmark (p.p.)": dr2_disp,
                             "ΔRMSE vs Benchmark (bps)": drmse_disp,
-                            "H1=Equal predictive accuracy (DM test)": dm_result,
-                            "DM_stat": f"{dm_stat:.2f}" if pd.notna(dm_stat) else "—",
+                            "H1=Non-equal predictive accuracy (DM test)": dm_result,
+                            "DM_stat": (
+                                f"{dm_stat:.2f}" if pd.notna(dm_stat) else "—"
+                            ),
                             "DM_p": f"{dm_p:.3f}" if pd.notna(dm_p) else "—",
                         }
                     )
             if not all_rows:
                 continue
             df = pd.DataFrame(all_rows).sort_values("horizon")
-            print(f">>> {model_label.upper()}")
-            display(df)
-            print()
-        print()
+            print("```text")
+            print(f"\n>>> {model_label.upper()}")
+            print("-" * 135)
+            print(df.to_string(index=False))
+            print("```")
+        print("```text")
+        print("-" * 135)
+        print("```")
+        print("\n")
 
 
-def plot_temporal_signal_summary(specs_dir, base_name, models, benchmark_dfs):
+def plot_temporal_signal_summary(
+    specs_dir, base_name, models, benchmark_dfs
+):
     split_map = {
         0.75: ("", "75‑25"),
         0.80: ("_80", "80‑20"),
@@ -456,13 +502,21 @@ def plot_temporal_signal_summary(specs_dir, base_name, models, benchmark_dfs):
                             outcome = "SIGNAL"
                     else:
                         outcome = "EQUAL"
-                    records.append({"horizon": h, "model": model, "outcome": outcome})
+                    records.append(
+                        {"horizon": h, "model": model, "outcome": outcome}
+                    )
     if not records:
         print("No DM test results found for plotting.")
         return
     df = pd.DataFrame(records)
-    summary = df.groupby(["horizon", "outcome"]).size().reset_index(name="count")
-    colors = {"SIGNAL": "#2E86AB", "NOISE": "#E67E22", "EQUAL": "#888888"}
+    summary = (
+        df.groupby(["horizon", "outcome"]).size().reset_index(name="count")
+    )
+    colors = {
+        "SIGNAL": "#2E86AB",
+        "NOISE": "#E67E22",
+        "EQUAL": "#888888",
+    }
     plt.style.use("seaborn-v0_8-whitegrid")
     fig, ax = plt.subplots(figsize=(8, 5), dpi=120)
     bar_width = 0.25
@@ -513,7 +567,9 @@ def summarise_temporal_signal_vars(specs_dir, base_name, models, all_labels):
                 for l1 in l1_vals:
                     if model == "elastic":
                         mlabel = "Elastic Net (L1=0.5)"
-                        base = f"{model}_{base_name}_t{h}{split_tag}_l1_{l1}_clust"
+                        base = (
+                            f"{model}_{base_name}_t{h}{split_tag}_l1_{l1}_clust"
+                        )
                     else:
                         mlabel = model.capitalize()
                         base = f"{model}_{base_name}_t{h}{split_tag}_clust"
@@ -553,7 +609,9 @@ def summarise_temporal_signal_vars(specs_dir, base_name, models, all_labels):
                         )
     shap_df = pd.DataFrame(shap_records)
     sig_df = pd.DataFrame(signal_records)
-    shap_df["Label"] = shap_df["Variable"].apply(lambda x: all_labels.get(x, x))
+    shap_df["Label"] = shap_df["Variable"].apply(
+        lambda x: all_labels.get(x, x)
+    )
     if shap_df.empty or sig_df.empty:
         print("No signal regressions found.")
         return
@@ -563,8 +621,11 @@ def summarise_temporal_signal_vars(specs_dir, base_name, models, all_labels):
         sh_h = shap_df[shap_df["Horizon"] == h]
         if sig_h.empty:
             continue
+        print("```text")
+        print("=" * 150)
         print(f"AVERAGE SHAP IMPORTANCE BY MODEL FOR T{h} (%)")
-
+        print("=" * 150)
+        print("```")
         model_splits = {
             "Lasso": set(),
             "Ridge": set(),
@@ -589,11 +650,17 @@ def summarise_temporal_signal_vars(specs_dir, base_name, models, all_labels):
                         & (sh_h["Model"] == m)
                         & (sh_h["Split"] == s)
                     )
-                    val = sh_h.loc[mask, "SHAP_pct"].mean() if mask.any() else 0
+                    val = (
+                        sh_h.loc[mask, "SHAP_pct"].mean()
+                        if mask.any()
+                        else 0
+                    )
                     vals.append(val)
                 entry[m] = round(np.mean(vals), 2)
             numbers = [
-                v for v in entry.values() if isinstance(v, (int, float, np.number))
+                v
+                for v in entry.values()
+                if isinstance(v, (int, float, np.number))
             ]
             entry["Average"] = round(np.mean(numbers), 2) if numbers else 0
             entry["Label"] = var
@@ -601,7 +668,11 @@ def summarise_temporal_signal_vars(specs_dir, base_name, models, all_labels):
         df_all = pd.DataFrame(rows)
         for _, row in df_all.iterrows():
             full_horizon_stats.append(
-                {"Horizon": h, "Label": row["Label"], "Average": row["Average"]}
+                {
+                    "Horizon": h,
+                    "Label": row["Label"],
+                    "Average": row["Average"],
+                }
             )
         df_show = df_all[df_all["Average"] >= 1.0].sort_values(
             "Average", ascending=False
@@ -609,7 +680,9 @@ def summarise_temporal_signal_vars(specs_dir, base_name, models, all_labels):
         if df_show.empty:
             print(f"No variables with average SHAP >1% for T{h}.")
             continue
-        fmt = lambda s: f"({', '.join(sorted(list(s)))})" if s else "(–)"
+        fmt = (
+            lambda s: f"({', '.join(sorted(list(s)))})" if s else "(–)"
+        )
         lasso_splits, ridge_splits, en_splits = (
             fmt(model_splits["Lasso"]),
             fmt(model_splits["Ridge"]),
@@ -626,19 +699,27 @@ def summarise_temporal_signal_vars(specs_dir, base_name, models, all_labels):
             f"Ridge {ridge_splits}",
             f"Elastic Net (L1=0.5) {en_splits}",
         ]
-        df_show = df_show.rename(columns=rename_map)[["Label"] + model_cols]
-        display(df_show)
-        print()
-
+        df_show = df_show.rename(columns=rename_map)[
+            ["Label"] + model_cols
+        ]
+        print("```text")
+        print(df_show.to_string(index=False))
+        print("```")
     if not full_horizon_stats:
         print("No data for final horizon table.")
         return
-
+    print("```text")
+    print("=" * 110)
     print("AVERAGE SHAP IMPORTANCE BY HORIZON (%)")
+    print("=" * 110)
     avg_df = pd.DataFrame(full_horizon_stats)
     pivot = (
         avg_df.pivot_table(
-            values="Average", index="Label", columns="Horizon", aggfunc="mean", fill_value=0
+            values="Average",
+            index="Label",
+            columns="Horizon",
+            aggfunc="mean",
+            fill_value=0,
         )
         .round(2)
         .sort_index(axis=1)
@@ -647,7 +728,8 @@ def summarise_temporal_signal_vars(specs_dir, base_name, models, all_labels):
     cols = ["Average"] + [c for c in pivot.columns if c != "Average"]
     pivot = pivot[cols].sort_values("Average", ascending=False)
     pivot = pivot[pivot["Average"] > 0.5]
-    display(pivot)
+    print(pivot.to_string())
+    print("```")
 
 
 # temporal prediction (lagged levels)
@@ -672,7 +754,9 @@ def get_prediction_stats(specs_dir, base_name, suffix="", split_share=None):
         for model_type in ["lasso", "ridge", "elastic"]:
             if model_type == "elastic":
                 l1_ratio = 0.5
-                fname = f"{model_type}_{prefix}_agn_l1_{l1_ratio}_clust_results.dat"
+                fname = (
+                    f"{model_type}_{prefix}_agn_l1_{l1_ratio}_clust_results.dat"
+                )
                 label = f"elastic_l1_{l1_ratio}"
             else:
                 fname = f"{model_type}_{prefix}_agn_clust_results.dat"
@@ -854,12 +938,20 @@ def print_temporal_stats(summary_df, benchmark_df=None):
     pivot_r2 = pivot_r2.mask(pivot_r2 < 0, "<0")
     pivot_rmse = pivot_rmse.mask(pivot_rmse > 10, ">100")
 
-    print("Test‑set R² by Horizon")
-    display(pivot_r2.fillna("-"))
-    print()
+    with pd.option_context("display.float_format", "{:.3f}".format):
+        r2_lines = pivot_r2.fillna("-").to_string(index=True).split("\n")
+        rmse_lines = pivot_rmse.fillna("-").to_string(index=True).split("\n")
+    max_len = max(len(r2_lines), len(rmse_lines))
+    r2_lines += [""] * (max_len - len(r2_lines))
+    rmse_lines += [""] * (max_len - len(rmse_lines))
 
-    print("Test‑set RMSE by Horizon")
-    display(pivot_rmse.fillna("-"))
+    print("```text")
+    print(f"{'Test‑set R² by Horizon':<60}   Test‑set RMSE by Horizon")
+    print("-" * 125)
+    for l1, l2 in zip(r2_lines, rmse_lines):
+        print(f"{l1:<60}   {l2}")
+    print("-" * 125)
+    print("```")
 
 
 def parse_filename(filepath):
