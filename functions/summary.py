@@ -5,33 +5,49 @@ import re
 from pathlib import Path
 import matplotlib.pyplot as plt
 from sklearn.metrics import mean_squared_error, r2_score
+from IPython.display import display, Markdown
 
 from functions.utils import check_split_year
+
+
+# Helper function for GitHub-friendly table display
+def show_as_markdown_table(df, title=None, bench_r2=None, bench_rmse=None):
+    """Display a table as a Markdown code block for GitHub and Jupyter."""
+    header_lines = []
+    header_lines.append("=" * 120)
+    if title:
+        header_lines.append(title)
+    if bench_r2 is not None and bench_rmse is not None:
+        header_lines.append(
+            f"Benchmark R²: {bench_r2:.4f}, Benchmark RMSE: {bench_rmse:.4f}"
+        )
+    header_lines.append("=" * 120)
+
+    text_block = "\n".join(header_lines) + "\n" + df.to_string(index=False)
+    md_text = f"```text\n{text_block}\n```"
+    display(Markdown(md_text))
 
 
 # mean reversion benchmark
 
 
 def show_simple_benchmark(df, split_share):
-    # map split_share to label
     split_labels = {0.75: "75‑25", 0.80: "80‑20", 0.85: "85‑15"}
     split_label = split_labels.get(
         split_share, f"{int(split_share*100)}‑{int((1-split_share)*100)}"
     )
 
-    # prep
     full = df[["country", "year", "tgt_spread_t1", "tgt_spread"]].dropna()
     fullte = full[
-        full["year"] > check_split_year(df, "tgt_spread_t1", split_share=split_share)
+        full["year"]
+        > check_split_year(df, "tgt_spread_t1", split_share=split_share)
     ]
     y_true = fullte["tgt_spread_t1"]
     y_pred = fullte["tgt_spread"]
 
-    # get main stats
     rmse = np.sqrt(mean_squared_error(y_true, y_pred))
     r2 = r2_score(y_true, y_pred)
 
-    # show fit and prediction error
     fig, axes = plt.subplots(1, 2, figsize=(10, 4), dpi=100)
     axes[0].scatter(y_true, y_pred, alpha=0.4, s=20)
     axes[0].plot(
@@ -56,21 +72,23 @@ def show_simple_benchmark(df, split_share):
     plt.tight_layout()
     plt.show()
 
-    # how much of total variance is explained by between-country variance
     df = fullte[["country", "tgt_spread_t1"]].dropna()
     overall_mean = df["tgt_spread_t1"].mean()
     n_i = df.groupby("country")["tgt_spread_t1"].count()
     means_i = df.groupby("country")["tgt_spread_t1"].mean()
 
-    # weighted between-country variance
-    sst_between = ((n_i * (means_i - overall_mean) ** 2).sum()) / (len(df) - 1)
-    sst_total = ((df["tgt_spread_t1"] - overall_mean) ** 2).sum() / (len(df) - 1)
+    sst_between = ((n_i * (means_i - overall_mean) ** 2).sum()) / (
+        len(df) - 1
+    )
+    sst_total = ((df["tgt_spread_t1"] - overall_mean) ** 2).sum() / (
+        len(df) - 1
+    )
     print(
         f"Share of between-country variance in total variance: {sst_between / sst_total:.2%}"
     )
 
 
-# base sigal regressions
+# base signal regressions
 
 
 def get_label(var_name, all_labels):
@@ -83,7 +101,9 @@ def simplify_label(label):
     return base
 
 
-def summarise_signal_regressions(specs_dir, base_name, models, benchmark_dfs):
+def summarise_signal_regressions(
+    specs_dir, base_name, models, benchmark_dfs
+):
     for split_share, (split_tag, split_label) in {
         0.75: ("", "75-25"),
         0.80: ("_80", "80-20"),
@@ -101,7 +121,9 @@ def summarise_signal_regressions(specs_dir, base_name, models, benchmark_dfs):
         ].values[0]
 
         for model in models:
-            for l1_ratio in [0.25, 0.5, 0.75] if model == "elastic" else [None]:
+            for l1_ratio in (
+                [0.25, 0.5, 0.75] if model == "elastic" else [None]
+            ):
                 file_name = (
                     f"{model}_{base_name}_t1{split_tag}_l1_{l1_ratio}_clust_results.dat"
                     if model == "elastic"
@@ -129,7 +151,9 @@ def summarise_signal_regressions(specs_dir, base_name, models, benchmark_dfs):
                         "Model": label,
                         "R²_test": best["R²_test"],
                         "RMSE_test": best["RMSE_test"],
-                        "ΔR² vs Benchmark (p.p.)": (best["R²_test"] - bench_r2)
+                        "ΔR² vs Benchmark (p.p.)": (
+                            best["R²_test"] - bench_r2
+                        )
                         * 100,
                         "ΔRMSE vs Benchmark (bps)": (
                             best["RMSE_test"] - bench_rmse
@@ -137,9 +161,13 @@ def summarise_signal_regressions(specs_dir, base_name, models, benchmark_dfs):
                         * 100,
                         "H1=Incremental signal present": reject,
                         "DM_stat": (
-                            best["DM_stat"] if pd.notna(best["DM_stat"]) else None
+                            best["DM_stat"]
+                            if pd.notna(best["DM_stat"])
+                            else None
                         ),
-                        "DM_p": best["DM_p"] if pd.notna(best["DM_p"]) else None,
+                        "DM_p": (
+                            best["DM_p"] if pd.notna(best["DM_p"]) else None
+                        ),
                     }
                 )
 
@@ -148,9 +176,9 @@ def summarise_signal_regressions(specs_dir, base_name, models, benchmark_dfs):
             df = df.sort_values("Model", ascending=False)
             df["R²_test"] = df["R²_test"].map(lambda x: f"{x:.4f}")
             df["RMSE_test"] = df["RMSE_test"].map(lambda x: f"{x:.4f}")
-            df["ΔR² vs Benchmark (p.p.)"] = df["ΔR² vs Benchmark (p.p.)"].map(
-                lambda x: f"{x:+.2f}"
-            )
+            df["ΔR² vs Benchmark (p.p.)"] = df[
+                "ΔR² vs Benchmark (p.p.)"
+            ].map(lambda x: f"{x:+.2f}")
             df["ΔRMSE vs Benchmark (bps)"] = df[
                 "ΔRMSE vs Benchmark (bps)"
             ].map(lambda x: f"{x:+.1f}")
@@ -161,15 +189,12 @@ def summarise_signal_regressions(specs_dir, base_name, models, benchmark_dfs):
                 lambda x: f"{x:.3f}" if pd.notna(x) else "—"
             )
 
-            print("```text")
-            print("=" * 120)
-            print(
-                f"INCREMENTAL SIGNAL REGRESSIONS — PERFORMANCE SUMMARY ({split_label} split)"
+            show_as_markdown_table(
+                df,
+                title=f"INCREMENTAL SIGNAL REGRESSIONS — PERFORMANCE SUMMARY ({split_label} split)",
+                bench_r2=bench_r2,
+                bench_rmse=bench_rmse,
             )
-            print(f"Benchmark R²: {bench_r2:.4f}, Benchmark RMSE: {bench_rmse:.4f}")
-            print("=" * 120)
-            print(df.to_string(index=False))
-            print("```")
             print()
 
 
@@ -198,7 +223,9 @@ def summarise_priced_in_regressions(
                 base = f"{model_type}_{base_name}_t{h}{split_part}_agn_clust"
             res_path = os.path.join(specs_dir, f"{base}_results.dat")
             shap_path = os.path.join(specs_dir, f"{base}_core_shap.dat")
-            stab_path = os.path.join(specs_dir, f"{base}_core_stability.dat")
+            stab_path = os.path.join(
+                specs_dir, f"{base}_core_stability.dat"
+            )
             if not os.path.exists(res_path):
                 continue
             res = pd.read_pickle(res_path)
@@ -274,33 +301,24 @@ def summarise_priced_in_regressions(
             "Average", ascending=False
         )
         results[model_key] = merged.set_index("label")
+
     if summary_rows:
         df_sum = pd.DataFrame(summary_rows).sort_values(
             ["Horizon", "Split", "Model"]
         )
-        print("```text")
-        print("=" * 90)
-        print("PRICED‑IN LEVEL REGRESSIONS — PERFORMANCE SUMMARY")
-        print("=" * 90)
-        print(df_sum.to_string(index=False))
-        print()
-        print(
-            "* denotes variables selected in >80% of regressions (stability selection not performed for Ridge)"
+        show_as_markdown_table(
+            df_sum, title="PRICED‑IN LEVEL REGRESSIONS — PERFORMANCE SUMMARY"
         )
-        print("```")
-        print()
+        print(
+            "\n* denotes variables selected in >80% of regressions (stability selection not performed for Ridge)\n"
+        )
+
     for model_key, dfm in results.items():
-        print("```text")
-        print("=" * 120)
-        print(f"{model_key.upper()} — SHAP IMPORTANCE BY TRAIN‑TEST SPLIT (%)")
-        print("=" * 120)
-        print(dfm.reset_index().to_string(index=False))
-        print("```")
-        print()
-    print("```text")
-    print("=" * 140)
-    print("FINAL AVERAGE SHAP IMPORTANCE BY MODEL (%)")
-    print("=" * 140)
+        show_as_markdown_table(
+            dfm.reset_index(),
+            title=f"{model_key.upper()} — SHAP IMPORTANCE BY TRAIN‑TEST SPLIT (%)",
+        )
+
     all_label_set = sorted({v for df in results.values() for v in df.index})
     final_df = pd.DataFrame(index=all_label_set)
     for m, dfm in results.items():
@@ -323,8 +341,10 @@ def summarise_priced_in_regressions(
         .round(2)
         .sort_values("Average", ascending=False)
     )
-    print(final_df.to_string())
-    print("```")
+    show_as_markdown_table(
+        final_df.reset_index().rename(columns={"index": "Variable"}),
+        title="FINAL AVERAGE SHAP IMPORTANCE BY MODEL (%)",
+    )
 
 
 # temporal benchmark
@@ -357,7 +377,9 @@ def get_benchmark_stats(df, split_share):
 # temporal signal regressions
 
 
-def print_temporal_signal_stats(specs_dir, base_name, models, benchmark_dfs):
+def print_temporal_signal_stats(
+    specs_dir, base_name, models, benchmark_dfs
+):
     split_map = {
         0.75: ("", "75-25"),
         0.80: ("_80", "80-20"),
@@ -370,11 +392,11 @@ def print_temporal_signal_stats(specs_dir, base_name, models, benchmark_dfs):
         bench_r2 = benchmark_df.set_index("horizon")["R2_test"]
         bench_rmse = benchmark_df.set_index("horizon")["RMSE_test"]
 
-        print("```text")
-        print("-" * 135)
-        print(f"{split_label} TRAIN-TEST SET SPLIT".center(135))
-        print("-" * 135)
-        print("```")
+        display(
+            Markdown(
+                f"```text\n{'-' * 135}\n{split_label + ' TRAIN-TEST SET SPLIT':^135}\n{'-' * 135}\n```"
+            )
+        )
 
         for model in models:
             variants = [0.5] if model == "elastic" else [None]
@@ -429,7 +451,9 @@ def print_temporal_signal_stats(specs_dir, base_name, models, benchmark_dfs):
                             else np.nan
                         )
                         dr2_disp = f"{d_r2:+.2f}" if pd.notna(d_r2) else "—"
-                        drmse_disp = f"{d_rmse:+.1f}" if pd.notna(d_rmse) else "—"
+                        drmse_disp = (
+                            f"{d_rmse:+.1f}" if pd.notna(d_rmse) else "—"
+                        )
 
                     rmse_disp = (
                         ">100" if rmse_val > 100 else f"{rmse_val:.4f}"
@@ -443,22 +467,21 @@ def print_temporal_signal_stats(specs_dir, base_name, models, benchmark_dfs):
                             "ΔRMSE vs Benchmark (bps)": drmse_disp,
                             "H1=Non-equal predictive accuracy (DM test)": dm_result,
                             "DM_stat": (
-                                f"{dm_stat:.2f}" if pd.notna(dm_stat) else "—"
+                                f"{dm_stat:.2f}"
+                                if pd.notna(dm_stat)
+                                else "—"
                             ),
-                            "DM_p": f"{dm_p:.3f}" if pd.notna(dm_p) else "—",
+                            "DM_p": (
+                                f"{dm_p:.3f}" if pd.notna(dm_p) else "—"
+                            ),
                         }
                     )
             if not all_rows:
                 continue
             df = pd.DataFrame(all_rows).sort_values("horizon")
-            print("```text")
-            print(f"\n>>> {model_label.upper()}")
-            print("-" * 135)
-            print(df.to_string(index=False))
-            print("```")
-        print("```text")
-        print("-" * 135)
-        print("```")
+            display(Markdown(f"\n**>>> {model_label.upper()}**\n"))
+            show_as_markdown_table(df, title=None)
+
         print("\n")
 
 
@@ -553,7 +576,9 @@ def plot_temporal_signal_summary(
     plt.show()
 
 
-def summarise_temporal_signal_vars(specs_dir, base_name, models, all_labels):
+def summarise_temporal_signal_vars(
+    specs_dir, base_name, models, all_labels
+):
     shap_records, signal_records = [], []
     split_map = {
         0.75: ("", "75/25"),
@@ -621,11 +646,13 @@ def summarise_temporal_signal_vars(specs_dir, base_name, models, all_labels):
         sh_h = shap_df[shap_df["Horizon"] == h]
         if sig_h.empty:
             continue
-        print("```text")
-        print("=" * 150)
-        print(f"AVERAGE SHAP IMPORTANCE BY MODEL FOR T{h} (%)")
-        print("=" * 150)
-        print("```")
+
+        display(
+            Markdown(
+                f"```text\n{'=' * 150}\nAVERAGE SHAP IMPORTANCE BY MODEL FOR T{h} (%)\n{'=' * 150}\n```"
+            )
+        )
+
         model_splits = {
             "Lasso": set(),
             "Ridge": set(),
@@ -651,9 +678,7 @@ def summarise_temporal_signal_vars(specs_dir, base_name, models, all_labels):
                         & (sh_h["Split"] == s)
                     )
                     val = (
-                        sh_h.loc[mask, "SHAP_pct"].mean()
-                        if mask.any()
-                        else 0
+                        sh_h.loc[mask, "SHAP_pct"].mean() if mask.any() else 0
                     )
                     vals.append(val)
                 entry[m] = round(np.mean(vals), 2)
@@ -680,9 +705,7 @@ def summarise_temporal_signal_vars(specs_dir, base_name, models, all_labels):
         if df_show.empty:
             print(f"No variables with average SHAP >1% for T{h}.")
             continue
-        fmt = (
-            lambda s: f"({', '.join(sorted(list(s)))})" if s else "(–)"
-        )
+        fmt = lambda s: f"({', '.join(sorted(list(s)))})" if s else "(–)"
         lasso_splits, ridge_splits, en_splits = (
             fmt(model_splits["Lasso"]),
             fmt(model_splits["Ridge"]),
@@ -699,19 +722,13 @@ def summarise_temporal_signal_vars(specs_dir, base_name, models, all_labels):
             f"Ridge {ridge_splits}",
             f"Elastic Net (L1=0.5) {en_splits}",
         ]
-        df_show = df_show.rename(columns=rename_map)[
-            ["Label"] + model_cols
-        ]
-        print("```text")
-        print(df_show.to_string(index=False))
-        print("```")
+        df_show = df_show.rename(columns=rename_map)[["Label"] + model_cols]
+        show_as_markdown_table(df_show, title=None)
+
     if not full_horizon_stats:
         print("No data for final horizon table.")
         return
-    print("```text")
-    print("=" * 110)
-    print("AVERAGE SHAP IMPORTANCE BY HORIZON (%)")
-    print("=" * 110)
+
     avg_df = pd.DataFrame(full_horizon_stats)
     pivot = (
         avg_df.pivot_table(
@@ -728,8 +745,10 @@ def summarise_temporal_signal_vars(specs_dir, base_name, models, all_labels):
     cols = ["Average"] + [c for c in pivot.columns if c != "Average"]
     pivot = pivot[cols].sort_values("Average", ascending=False)
     pivot = pivot[pivot["Average"] > 0.5]
-    print(pivot.to_string())
-    print("```")
+    show_as_markdown_table(
+        pivot.reset_index(),
+        title="AVERAGE SHAP IMPORTANCE BY HORIZON (%)",
+    )
 
 
 # temporal prediction (lagged levels)
@@ -945,19 +964,21 @@ def print_temporal_stats(summary_df, benchmark_df=None):
     r2_lines += [""] * (max_len - len(r2_lines))
     rmse_lines += [""] * (max_len - len(rmse_lines))
 
-    print("```text")
-    print(f"{'Test‑set R² by Horizon':<60}   Test‑set RMSE by Horizon")
-    print("-" * 125)
+    output_lines = [
+        f"{'Test‑set R² by Horizon':<60}   Test‑set RMSE by Horizon",
+        "-" * 125,
+    ]
     for l1, l2 in zip(r2_lines, rmse_lines):
-        print(f"{l1:<60}   {l2}")
-    print("-" * 125)
-    print("```")
+        output_lines.append(f"{l1:<60}   {l2}")
+    output_lines.append("-" * 125)
+
+    display(Markdown(f"```text\n" + "\n".join(output_lines) + "\n```"))
 
 
 def parse_filename(filepath):
     name = Path(filepath).stem
     match = re.search(r"_t(\d+)_", name)
-    horizon = int(match.group(1)) if match else 0  # t0 if no t# tag
+    horizon = int(match.group(1)) if match else 0
     if "_80_" in name:
         split = 0.80
     elif "_85_" in name:
