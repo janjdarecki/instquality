@@ -188,6 +188,94 @@ def summarise_priced_in_regressions(specs_dir, base_name, suffix, model_configs,
     print(final_df.to_string())
 
 
+def summarise_temporal_priced_in_vars(specs_dir, base_name, models, all_labels):
+    shap_records, signal_records = [], []
+    split_map = {0.75: ("", "75/25"), 0.80: ("_80", "80/20"), 0.85: ("_85", "85/15")}
+    for split_share, (split_tag, split_label) in split_map.items():
+        for h in range(0, 11):
+            for model in models:
+                l1_vals = [0.5] if model == "elastic" else [None]
+                for l1 in l1_vals:
+                    if model == "elastic":
+                        mlabel = "Elastic Net (L1=0.5)"
+                        base = f"{model}_{base_name}_t{h}{split_tag}_agn_l1_{l1}_clust"
+                    else:
+                        mlabel = model.capitalize()
+                        base = f"{model}_{base_name}_t{h}{split_tag}_agn_clust"
+                    resf = os.path.join(specs_dir, f"{base}_results.dat")
+                    shapf = os.path.join(specs_dir, f"{base}_core_shap.dat")
+                    if not os.path.exists(resf): continue
+                    rdf = pd.read_pickle(resf)
+                    if rdf.empty or "R²_test" not in rdf: continue
+                    best = rdf.loc[rdf["R²_test"].idxmax()]
+                    # Filter out regressions with negative test R²
+                    if best["R²_test"] < 0: continue
+                    signal_records.append({"Split": split_label, "Horizon": h, "Model": mlabel})
+                    if not os.path.exists(shapf): continue
+                    sdf = pd.read_pickle(shapf)
+                    if sdf.empty or "shap_importance_pct" not in sdf: continue
+                    for _, r in sdf.iterrows():
+                        shap_records.append({"Split": split_label, "Horizon": h, "Model": mlabel, "Variable": r["core_variable"], "SHAP_pct": r["shap_importance_pct"]})
+    shap_df = pd.DataFrame(shap_records)
+    sig_df = pd.DataFrame(signal_records)
+    shap_df["Label"] = shap_df["Variable"].apply(lambda x: all_labels.get(x, x))
+    if shap_df.empty or sig_df.empty:
+        print("No priced-in regressions found.")
+        return
+    full_horizon_stats = []
+    for h in sorted(sig_df["Horizon"].unique()):
+        sig_h = sig_df[sig_df["Horizon"] == h]
+        sh_h = shap_df[shap_df["Horizon"] == h]
+        if sig_h.empty: continue
+        print("=" * 150)
+        print(f"AVERAGE SHAP IMPORTANCE BY MODEL FOR T{h} (%)")
+        print("=" * 150)
+        model_splits = {"Lasso": set(), "Ridge": set(), "Elastic Net (L1=0.5)": set()}
+        for _, r in sig_h.iterrows():
+            for key in model_splits:
+                if key.split()[0] in r["Model"]:
+                    model_splits[key].add(r["Split"])
+        all_vars = sorted(sh_h["Label"].unique())
+        rows = []
+        for var in all_vars:
+            entry = {}
+            for m, splits in model_splits.items():
+                if not splits: entry[m] = "-"; continue
+                vals = []
+                for s in splits:
+                    mask = (sh_h["Label"] == var) & (sh_h["Model"] == m) & (sh_h["Split"] == s)
+                    val = sh_h.loc[mask, "SHAP_pct"].mean() if mask.any() else 0
+                    vals.append(val)
+                entry[m] = round(np.mean(vals), 2)
+            numbers = [v for v in entry.values() if isinstance(v, (int, float, np.number))]
+            entry["Average"] = round(np.mean(numbers), 2) if numbers else 0
+            entry["Label"] = var
+            rows.append(entry)
+        df_all = pd.DataFrame(rows)
+        for _, row in df_all.iterrows():
+            full_horizon_stats.append({"Horizon": h, "Label": row["Label"], "Average": row["Average"]})
+        df_show = df_all[df_all["Average"] >= 1.0].sort_values("Average", ascending=False)
+        if df_show.empty:
+            print(f"No variables with average SHAP >1% for T{h}.")
+            continue
+        model_cols = ["Average", "Lasso", "Ridge", "Elastic Net (L1=0.5)"]
+        df_show = df_show[["Label"] + model_cols]
+        print(df_show.to_string(index=False))
+    if not full_horizon_stats:
+        print("No data for final horizon table.")
+        return
+    print("=" * 110)
+    print("AVERAGE SHAP IMPORTANCE BY HORIZON (%)")
+    print("=" * 110)
+    avg_df = pd.DataFrame(full_horizon_stats)
+    pivot = (avg_df.pivot_table(values="Average", index="Label", columns="Horizon", aggfunc="mean", fill_value=0).round(2).sort_index(axis=1))
+    pivot["Average"] = pivot.mean(axis=1).round(2)
+    cols = ["Average"] + [c for c in pivot.columns if c != "Average"]
+    pivot = pivot[cols].sort_values("Average", ascending=False)
+    pivot = pivot[pivot["Average"] > 0.5]
+    print(pivot.to_string())
+
+
 # temporal benchmark
 
 
