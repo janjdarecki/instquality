@@ -1,4 +1,4 @@
-# instquality — Institutions and Sovereign Borrowing Costs
+# instquality — institutions and sovereign borrowing costs
 
 **Which specific laws and institutions matter most for how much a country pays to borrow? (As measured by the spread over a US 10-year treasury)**
 
